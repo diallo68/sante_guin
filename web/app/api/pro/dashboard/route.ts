@@ -1,0 +1,73 @@
+import { NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
+import { getAuthUser } from '@/lib/auth';
+import Appointment from '@/models/Appointment';
+import Doctor from '@/models/Doctor';
+
+export async function GET() {
+  try {
+    const authUser = await getAuthUser();
+    if (!authUser || (authUser.role !== 'doctor' && authUser.role !== 'pharmacist' && authUser.role !== 'admin')) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+
+    await connectDB();
+
+    // Trouver le profil médecin lié à cet utilisateur
+    const doctor = await Doctor.findOne({ userId: authUser.userId }).lean();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    let stats = {
+      todayAppointments: 0,
+      monthAppointments: 0,
+      pendingAppointments: 0,
+      upcomingAppointments: [] as any[],
+    };
+
+    if (doctor) {
+      const [todayCount, monthCount, pendingCount, upcoming] = await Promise.all([
+        Appointment.countDocuments({
+          doctorId: doctor._id,
+          date: { $gte: today, $lt: tomorrow },
+          status: { $in: ['confirmed', 'pending'] },
+        }),
+        Appointment.countDocuments({
+          doctorId: doctor._id,
+          date: { $gte: startOfMonth },
+          status: { $ne: 'cancelled' },
+        }),
+        Appointment.countDocuments({
+          doctorId: doctor._id,
+          status: 'pending',
+        }),
+        Appointment.find({
+          doctorId: doctor._id,
+          date: { $gte: today },
+          status: { $in: ['confirmed', 'pending'] },
+        })
+          .populate('patientId', 'firstName lastName phone email')
+          .sort({ date: 1, time: 1 })
+          .limit(5)
+          .lean(),
+      ]);
+
+      stats = {
+        todayAppointments: todayCount,
+        monthAppointments: monthCount,
+        pendingAppointments: pendingCount,
+        upcomingAppointments: upcoming,
+      };
+    }
+
+    return NextResponse.json({ stats, doctor });
+  } catch (error) {
+    console.error('Pro dashboard error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

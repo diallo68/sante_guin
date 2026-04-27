@@ -2,25 +2,54 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, Mail, Lock, Phone, User, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Phone, User, ChevronRight, X, Check, MapPin } from 'lucide-react';
+
+const LOCATIONS: { group: string; places: string[] }[] = [
+  {
+    group: 'Conakry — Communes',
+    places: ['Kaloum', 'Dixinn', 'Matam', 'Ratoma', 'Matoto'],
+  },
+  {
+    group: 'Basse-Guinée',
+    places: ['Coyah', 'Dubréka', 'Forécariah', 'Boffa', 'Fria', 'Kindia', 'Télimélé', 'Kamsar', 'Boké'],
+  },
+  {
+    group: 'Moyenne-Guinée',
+    places: ['Labé', 'Mamou', 'Pita', 'Dalaba', 'Mali', 'Koubia', 'Lélouma', 'Tougué'],
+  },
+  {
+    group: 'Haute-Guinée',
+    places: ['Kankan', 'Siguiri', 'Kouroussa', 'Mandiana', 'Kérouané', 'Faranah', 'Kissidougou', 'Dinguiraye'],
+  },
+  {
+    group: 'Guinée Forestière',
+    places: ['N\'Zérékoré', 'Guéckédou', 'Macenta', 'Yomou', 'Lola', 'Beyla', 'Sipilou'],
+  },
+];
 
 const SPECIALTIES = [
-  'Chirurgien-dentiste',
+  'Médecin généraliste',
   'Cardiologue',
+  'Chirurgien-dentiste',
   'Dermatologue',
-  'Pédiatre',
+  'Endocrinologue',
+  'Gastroentérologue',
+  'Gynécologue',
   'Neurologue',
-  'Orthopédiste',
   'Ophtalmologue',
   'ORL',
-  'Gastroentérologue',
+  'Orthopédiste',
+  'Pédiatre',
   'Pneumologue',
-  'Urologue',
-  'Rhumatologue',
-  'Endocrinologue',
   'Psychiatre',
+  'Rhumatologue',
   'Chirurgien',
-  'Médecin généraliste',
+  'Urologue',
+  'Urgentiste',
+  'Radiologue',
+  'Anesthésiste',
+  'Médecine interne',
+  'Infectiologue',
 ];
 
 type UserType = 'patient' | 'doctor' | null;
@@ -34,12 +63,13 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    specialty: '',
+    location: '',
     password: '',
     confirmPassword: '',
     acceptTerms: false,
@@ -60,9 +90,12 @@ export default function SignupPage() {
     }
   };
 
-  const selectSpecialty = (specialty: string) => {
-    setFormData(prev => ({ ...prev, specialty }));
-    setShowSpecialtyModal(false);
+  const toggleSpecialty = (specialty: string) => {
+    setSelectedSpecialties(prev =>
+      prev.includes(specialty)
+        ? prev.filter(s => s !== specialty)
+        : [...prev, specialty]
+    );
   };
 
   const validateForm = () => {
@@ -96,8 +129,12 @@ export default function SignupPage() {
       }
     }
 
-    if (userType === 'doctor' && !formData.specialty) {
-      newErrors.specialty = 'La spécialité est requise';
+    if (userType === 'doctor' && selectedSpecialties.length === 0) {
+      newErrors.specialty = 'Sélectionnez au moins une spécialité';
+    }
+
+    if (userType === 'doctor' && !formData.location) {
+      newErrors.location = 'La localisation est requise';
     }
 
     if (!formData.password) {
@@ -122,18 +159,36 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      // Simulation d'appel API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Aller à l'étape de vérification
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: contactMethod === 'email' ? formData.email : undefined,
+          phone: contactMethod === 'phone' ? formData.phone : undefined,
+          password: formData.password,
+          role: userType === 'doctor' ? 'doctor' : 'patient',
+          specialties: userType === 'doctor' ? selectedSpecialties : undefined,
+          location: userType === 'doctor' ? formData.location : undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrors({ submit: data.error || 'Erreur lors de l\'inscription.' });
+        return;
+      }
+
       setStep('verify');
     } catch (error) {
-      setErrors({ submit: 'Erreur lors de l\'inscription. Veuillez réessayer.' });
+      setErrors({ submit: 'Erreur de connexion au serveur. Veuillez réessayer.' });
     } finally {
       setLoading(false);
     }
@@ -367,53 +422,137 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* Specialty (for doctors) */}
+            {/* Spécialités (médecin/cabinet) — choix multiple */}
             {userType === 'doctor' && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Spécialité</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Spécialité(s)
+                  </label>
+                  {selectedSpecialties.length > 0 && (
+                    <span className="text-xs text-blue-600 font-semibold">
+                      {selectedSpecialties.length} sélectionnée{selectedSpecialties.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+
+                {/* Chips des spécialités sélectionnées */}
+                {selectedSpecialties.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {selectedSpecialties.map(s => (
+                      <span
+                        key={s}
+                        className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full"
+                      >
+                        {s}
+                        <button
+                          type="button"
+                          onClick={() => toggleSpecialty(s)}
+                          className="hover:text-blue-900"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Bouton pour ouvrir le modal */}
                 <button
                   type="button"
                   onClick={() => setShowSpecialtyModal(true)}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all text-left ${
+                  className={`w-full px-4 py-3 border-2 rounded-lg text-left text-sm transition-all ${
                     errors.specialty
-                      ? 'border-red-500 focus:border-red-600 bg-red-50'
-                      : 'border-gray-300 focus:border-blue-600'
+                      ? 'border-red-500 bg-red-50 text-red-600'
+                      : 'border-gray-300 hover:border-blue-400 text-gray-500'
                   }`}
                 >
-                  {formData.specialty || 'Sélectionnez une spécialité'}
+                  {selectedSpecialties.length === 0
+                    ? '+ Ajouter une ou plusieurs spécialités'
+                    : '+ Ajouter une autre spécialité'}
                 </button>
                 {errors.specialty && (
                   <p className="text-red-600 text-sm mt-1">{errors.specialty}</p>
                 )}
+                <p className="text-xs text-gray-400 mt-1">
+                  Un cabinet médical peut exercer plusieurs spécialités.
+                </p>
 
-                {/* Specialty Modal */}
+                {/* Modal de sélection */}
+
                 {showSpecialtyModal && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-                    <div className="w-full bg-white rounded-t-3xl p-6 max-h-96 overflow-y-auto">
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">Sélectionnez votre spécialité</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {SPECIALTIES.map(specialty => (
-                          <button
-                            key={specialty}
-                            onClick={() => selectSpecialty(specialty)}
-                            className={`p-3 rounded-lg font-semibold transition-all ${
-                              formData.specialty === specialty
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {specialty}
-                          </button>
-                        ))}
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50" onClick={() => setShowSpecialtyModal(false)}>
+                    <div className="w-full bg-white rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">Choisissez vos spécialités</h3>
+                        <button onClick={() => setShowSpecialtyModal(false)} className="text-gray-400 hover:text-gray-600">
+                          <X size={22} />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-500 mb-4">Vous pouvez en sélectionner plusieurs.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {SPECIALTIES.map(specialty => {
+                          const selected = selectedSpecialties.includes(specialty);
+                          return (
+                            <button
+                              key={specialty}
+                              type="button"
+                              onClick={() => toggleSpecialty(specialty)}
+                              className={`flex items-center justify-between p-3 rounded-xl font-medium text-sm transition-all ${
+                                selected
+                                  ? 'bg-blue-600 text-white shadow-md'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              <span>{specialty}</span>
+                              {selected && <Check size={15} className="flex-shrink-0" />}
+                            </button>
+                          );
+                        })}
                       </div>
                       <button
+                        type="button"
                         onClick={() => setShowSpecialtyModal(false)}
-                        className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-900 font-bold py-3 px-4 rounded-lg"
+                        className="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl"
                       >
-                        Fermer
+                        Confirmer ({selectedSpecialties.length} sélectionnée{selectedSpecialties.length > 1 ? 's' : ''})
                       </button>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Localisation (médecin/cabinet) */}
+            {userType === 'doctor' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <span className="flex items-center gap-1">
+                    <MapPin size={15} className="text-gray-500" />
+                    Localisation
+                  </span>
+                </label>
+                <select
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all bg-white ${
+                    errors.location
+                      ? 'border-red-500 focus:border-red-600 bg-red-50'
+                      : 'border-gray-300 focus:border-blue-600'
+                  }`}
+                >
+                  <option value="">-- Sélectionnez votre localisation --</option>
+                  {LOCATIONS.map(group => (
+                    <optgroup key={group.group} label={group.group}>
+                      {group.places.map(place => (
+                        <option key={place} value={place}>{place}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                {errors.location && (
+                  <p className="text-red-600 text-sm mt-1">{errors.location}</p>
                 )}
               </div>
             )}

@@ -1,321 +1,292 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Star, MapPin, Clock, Phone, Mail, Package, Truck, Heart, MessageCircle, ShoppingCart } from 'lucide-react';
+import {
+  Star, MapPin, Clock, Phone, Mail, Package,
+  Truck, Heart, CheckCircle, AlertCircle, Loader2,
+} from 'lucide-react';
+
+interface Pharmacy {
+  _id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  city: string;
+  address?: string;
+  photo?: string;
+  isOpen24h: boolean;
+  openTime?: string;
+  closeTime?: string;
+  rating: number;
+  reviewCount: number;
+  isVerified: boolean;
+}
+
+function isCurrentlyOpen(pharmacy: Pharmacy): boolean {
+  if (pharmacy.isOpen24h) return true;
+  if (!pharmacy.openTime || !pharmacy.closeTime) return false;
+  const now = new Date();
+  const [oh, om] = pharmacy.openTime.split(':').map(Number);
+  const [ch, cm] = pharmacy.closeTime.split(':').map(Number);
+  const current = now.getHours() * 60 + now.getMinutes();
+  return current >= oh * 60 + om && current < ch * 60 + cm;
+}
 
 export default function PharmacyDetailPage() {
+  const { id } = useParams<{ id: string }>();
+
+  const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
 
-  // Mock data
-  const pharmacy = {
-    id: '1',
-    name: 'Pharmacie Centrale',
-    rating: 4.7,
-    reviews: 145,
-    distance: 1.2,
-    location: 'Kindia, Conakry',
-    image: '💊',
-    isOpen: true,
-    openingHours: '08:00 - 22:00',
-    phone: '+224 622 123 456',
-    email: 'contact@pharmaciecentrale.gn',
-    experience: 15,
-    bio: 'Pharmacie Centrale est votre partenaire santé de confiance depuis 15 ans. Nous offrons une large gamme de médicaments, produits de santé et services pharmaceutiques.',
-    services: [
-      'Livraison à domicile',
-      'Consultation pharmaceutique',
-      'Test rapide (COVID, Malaria, etc.)',
-      'Vaccination',
-      'Gestion des ordonnances',
-      'Conseil en santé',
-    ],
-    deliveryInfo: {
-      available: true,
-      timeMin: 30,
-      timeMax: 45,
-      fee: 5000,
-    },
-    availability: [
-      { day: 'Lundi', hours: '08:00 - 22:00' },
-      { day: 'Mardi', hours: '08:00 - 22:00' },
-      { day: 'Mercredi', hours: '08:00 - 22:00' },
-      { day: 'Jeudi', hours: '08:00 - 22:00' },
-      { day: 'Vendredi', hours: '08:00 - 22:00' },
-      { day: 'Samedi', hours: '09:00 - 20:00' },
-      { day: 'Dimanche', hours: '10:00 - 18:00' },
-    ],
-    certifications: [
-      'Agrément Ministère de la Santé',
-      'Certification ISO 9001',
-      'Pharmacie Agréée',
-    ],
-    reviews: [
-      {
-        id: 1,
-        author: 'Mariam D.',
-        rating: 5,
-        date: '2024-04-10',
-        text: 'Excellente pharmacie ! Livraison rapide et produits de qualité. Je recommande !',
-      },
-      {
-        id: 2,
-        author: 'Ousmane T.',
-        rating: 4,
-        date: '2024-04-05',
-        text: 'Bonne sélection de médicaments. Le personnel est courtois et compétent.',
-      },
-      {
-        id: 3,
-        author: 'Fatoumata K.',
-        rating: 5,
-        date: '2024-03-28',
-        text: 'Très satisfaite. Livraison à l\'heure et produits conformes à la commande.',
-      },
-    ],
-  };
+  useEffect(() => {
+    fetch(`/api/pharmacies/${id}`)
+      .then(r => {
+        if (r.status === 404) { setNotFound(true); return null; }
+        return r.json();
+      })
+      .then(data => { if (data?.pharmacy) setPharmacy(data.pharmacy); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
 
-  const popularMedicines = [
-    { name: 'Paracétamol 500mg', price: 2500, stock: 45 },
-    { name: 'Amoxicilline 500mg', price: 5000, stock: 23 },
-    { name: 'Ibuprofen 400mg', price: 3000, stock: 67 },
-    { name: 'Vitamine C 1000mg', price: 4000, stock: 89 },
-  ];
+    fetch('/api/favorites')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.pharmacyIds) {
+          setIsFavorite(data.pharmacyIds.map(String).includes(String(id)));
+        }
+      })
+      .catch(() => {});
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  if (notFound || !pharmacy) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
+        <AlertCircle className="w-12 h-12 text-gray-400" />
+        <h1 className="text-xl font-bold text-gray-700">Pharmacie introuvable</h1>
+        <Link href="/pharmacies" className="text-emerald-600 hover:underline">← Retour à la liste</Link>
+      </div>
+    );
+  }
+
+  const isOpen = isCurrentlyOpen(pharmacy);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Link href="/pharmacies" className="text-green-600 hover:text-green-700 font-semibold mb-4 inline-block">
-            ← Retour
+          <Link href="/pharmacies" className="text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-1">
+            ← Retour aux pharmacies
           </Link>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Pharmacy Info */}
-          <div className="lg:col-span-2">
-            {/* Pharmacy Card */}
-            <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
-              <div className="flex items-start gap-6 mb-6">
-                <div className="text-7xl">{pharmacy.image}</div>
+
+          {/* ── LEFT COL ── */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Identity card */}
+            <div className="bg-white rounded-2xl shadow-md p-8">
+              <div className="flex items-start gap-6">
+                <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-4xl flex-shrink-0">
+                  💊
+                </div>
                 <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900">{pharmacy.name}</h1>
-                      <p className="text-lg text-green-600 font-semibold">{pharmacy.experience} ans d'expérience</p>
-                    </div>
+                  <div className="flex items-start justify-between mb-1">
+                    <h1 className="text-2xl font-bold text-gray-900">{pharmacy.name}</h1>
                     <button
-                      onClick={() => setIsFavorite(!isFavorite)}
-                      className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                      onClick={async () => {
+                        const next = !isFavorite;
+                        setIsFavorite(next);
+                        await fetch('/api/favorites', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ type: 'pharmacy', targetId: id }),
+                        });
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition"
+                      title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                     >
-                      <Heart
-                        size={28}
-                        className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}
-                      />
+                      <Heart size={26} className={isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-bold text-gray-900">{pharmacy.rating}</span>
-                      <span className="text-gray-600">({pharmacy.reviews} avis)</span>
-                    </div>
+                  <div className="flex flex-wrap items-center gap-3 mt-2">
+                    {pharmacy.rating > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-bold text-gray-900">{pharmacy.rating.toFixed(1)}</span>
+                        <span className="text-gray-500 text-sm">({pharmacy.reviewCount} avis)</span>
+                      </div>
+                    )}
                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      pharmacy.isOpen
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
+                      isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
-                      {pharmacy.isOpen ? '✓ Ouvert' : 'Fermé'}
+                      {isOpen ? '✓ Ouvert' : 'Fermé'}
                     </span>
+                    {pharmacy.isVerified && (
+                      <span className="flex items-center gap-1 px-2 py-1 bg-teal-100 text-teal-700 text-xs font-bold rounded-full">
+                        <CheckCircle size={11} /> Vérifié
+                      </span>
+                    )}
+                    {pharmacy.isOpen24h && (
+                      <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">
+                        24h/24
+                      </span>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">{pharmacy.location} ({pharmacy.distance} km)</span>
+                  <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin size={14} className="text-gray-400" />
+                      {pharmacy.city}{pharmacy.address ? ` · ${pharmacy.address}` : ''}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">{pharmacy.openingHours}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Clock size={14} className="text-gray-400" />
+                      {pharmacy.isOpen24h ? '24h/24 · 7j/7' : `${pharmacy.openTime} – ${pharmacy.closeTime}`}
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Bio */}
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-3">À propos</h2>
-                <p className="text-gray-600 leading-relaxed">{pharmacy.bio}</p>
               </div>
             </div>
 
             {/* Services */}
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Services Offerts</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {pharmacy.services.map((service, idx) => (
-                  <div key={idx} className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-                    <span className="text-green-600">✓</span>
-                    <span className="text-gray-700">{service}</span>
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Package size={16} className="text-emerald-600" /> Services
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  'Médicaments sur ordonnance',
+                  'Produits parapharmaceutiques',
+                  'Conseil pharmaceutique',
+                  'Tests rapides (Malaria, COVID...)',
+                  'Gestion des ordonnances',
+                  ...(pharmacy.isOpen24h ? ['Ouverture 24h/24 · 7j/7'] : []),
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl">
+                    <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
+                    <span className="text-sm text-gray-700">{s}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Delivery Info */}
-            {pharmacy.deliveryInfo.available && (
-              <div className="bg-white rounded-2xl shadow-md p-6 mb-8 border-2 border-green-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  <Truck className="w-5 h-5 inline mr-2" />
-                  Livraison à Domicile
-                </h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Délai</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {pharmacy.deliveryInfo.timeMin}-{pharmacy.deliveryInfo.timeMax} min
-                    </p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Frais</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {pharmacy.deliveryInfo.fee.toLocaleString()} FG
-                    </p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Disponibilité</p>
-                    <p className="text-2xl font-bold text-green-600">24h/24</p>
+            {/* Delivery */}
+            <div className="bg-white rounded-2xl shadow-md p-6 border-2 border-emerald-100">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Truck size={16} className="text-emerald-600" /> Livraison à domicile
+              </h3>
+              <p className="text-sm text-gray-500">
+                Contactez directement la pharmacie pour connaître les modalités de livraison et les zones desservies.
+              </p>
+              {pharmacy.phone && (
+                <a
+                  href={`tel:${pharmacy.phone}`}
+                  className="mt-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl transition text-sm"
+                >
+                  <Phone size={15} /> Appeler pour commander
+                </a>
+              )}
+            </div>
+
+            {/* Horaires */}
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Clock size={16} className="text-gray-500" /> Horaires d'ouverture
+              </h3>
+              {pharmacy.isOpen24h ? (
+                <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                  <CheckCircle className="text-emerald-600" size={20} />
+                  <div>
+                    <p className="font-bold text-emerald-800">Ouvert 24h/24 · 7j/7</p>
+                    <p className="text-sm text-emerald-600">Cette pharmacie ne ferme jamais</p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Popular Medicines */}
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Médicaments Populaires</h3>
-              <div className="space-y-3">
-                {popularMedicines.map((med, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-semibold text-gray-900">{med.name}</p>
-                      <p className="text-sm text-gray-600">{med.stock} en stock</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">{med.price.toLocaleString()} FG</p>
-                      <button
-                        onClick={() => setCartCount(cartCount + 1)}
-                        className="text-green-600 hover:text-green-700 font-semibold text-sm mt-1"
-                      >
-                        Ajouter
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Availability */}
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Horaires d'Ouverture</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {pharmacy.availability.map((avail, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Clock className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="font-semibold text-gray-900">{avail.day}</p>
-                      <p className="text-sm text-gray-600">{avail.hours}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Reviews */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Avis des Clients</h3>
-              <div className="space-y-4">
-                {pharmacy.reviews.map((review) => (
-                  <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
-                    <div className="flex items-start justify-between mb-2">
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map(day => (
+                    <div key={day} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                      <Clock size={14} className="text-gray-400" />
                       <div>
-                        <p className="font-semibold text-gray-900">{review.author}</p>
-                        <p className="text-sm text-gray-500">{review.date}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={16}
-                            className={i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-                          />
-                        ))}
+                        <p className="font-semibold text-gray-900 text-sm">{day}</p>
+                        <p className="text-xs text-gray-500">
+                          {day === 'Dimanche' ? 'Fermé' : `${pharmacy.openTime} – ${pharmacy.closeTime}`}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-gray-600">{review.text}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right Column - Contact & Actions */}
-          <div>
-            {/* Contact Card */}
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-6 sticky top-4">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Informations de Contact</h3>
+          {/* ── RIGHT COL — CONTACT ── */}
+          <div className="sticky top-4 space-y-4">
+            <div className="bg-white rounded-2xl shadow-md p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Contact</h3>
 
-              {/* Phone */}
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg mb-3">
-                <Phone className="w-5 h-5 text-green-600" />
-                <a href={`tel:${pharmacy.phone}`} className="text-green-600 hover:text-green-700 font-semibold">
-                  {pharmacy.phone}
-                </a>
+              <div className="space-y-3 mb-6">
+                {pharmacy.phone && (
+                  <a href={`tel:${pharmacy.phone}`} className="flex items-center gap-3 p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition">
+                    <Phone size={18} className="text-emerald-600" />
+                    <span className="text-emerald-700 font-semibold">{pharmacy.phone}</span>
+                  </a>
+                )}
+                {pharmacy.email && (
+                  <a href={`mailto:${pharmacy.email}`} className="flex items-center gap-3 p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition">
+                    <Mail size={18} className="text-emerald-600" />
+                    <span className="text-emerald-700 font-semibold text-sm">{pharmacy.email}</span>
+                  </a>
+                )}
               </div>
 
-              {/* Email */}
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg mb-6">
-                <Mail className="w-5 h-5 text-green-600" />
-                <a href={`mailto:${pharmacy.email}`} className="text-green-600 hover:text-green-700 font-semibold">
-                  {pharmacy.email}
+              <div className="space-y-2">
+                {pharmacy.phone && (
+                  <a
+                    href={`tel:${pharmacy.phone}`}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Phone size={16} /> Appeler maintenant
+                  </a>
+                )}
+                <a
+                  href={`https://wa.me/${pharmacy.phone?.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm"
+                >
+                  WhatsApp
                 </a>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-5 h-5" />
-                  Commander ({cartCount})
-                </button>
-
-                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                  <MessageCircle className="w-5 h-5" />
-                  Envoyer un Message
-                </button>
-
-                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Suivi de Livraison
-                </button>
               </div>
             </div>
 
-            {/* Certifications */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <h4 className="font-bold text-gray-900 mb-3">Certifications</h4>
-              <ul className="space-y-2">
-                {pharmacy.certifications.map((cert, idx) => (
-                  <li key={idx} className="flex gap-2 text-sm text-gray-600">
-                    <span className="text-green-600 font-bold">✓</span>
-                    {cert}
-                  </li>
-                ))}
-              </ul>
+            {/* Statut */}
+            <div className={`rounded-2xl p-5 border-2 text-center ${
+              isOpen ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+            }`}>
+              <div className={`text-3xl mb-2 font-bold ${isOpen ? 'text-green-700' : 'text-red-700'}`}>
+                {isOpen ? 'OUVERT' : 'FERMÉ'}
+              </div>
+              <p className="text-sm text-gray-600">
+                {pharmacy.isOpen24h
+                  ? 'Disponible 24h/24 · 7j/7'
+                  : `Horaires : ${pharmacy.openTime} – ${pharmacy.closeTime}`}
+              </p>
             </div>
           </div>
         </div>

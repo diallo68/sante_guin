@@ -1,0 +1,119 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
+import { getAuthUser } from '@/lib/auth';
+import Doctor from '@/models/Doctor';
+import Appointment from '@/models/Appointment';
+
+export async function GET(req: NextRequest) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    await connectDB();
+
+    const doctor = await Doctor.findOne({ userId: authUser.userId }).lean();
+    if (!doctor) {
+      return NextResponse.json({ error: 'Profil médecin introuvable' }, { status: 404 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status');
+
+    const query: Record<string, unknown> = { doctorId: doctor._id };
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    const appointments = await Appointment.find(query)
+      .populate('patientId', 'firstName lastName email phone')
+      .sort({ date: -1 })
+      .lean();
+
+    return NextResponse.json({ appointments });
+  } catch (error) {
+    console.error('Pro appointments GET error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { appointmentId, status, notes } = body;
+
+    if (!appointmentId || !status) {
+      return NextResponse.json({ error: 'ID et statut requis' }, { status: 400 });
+    }
+
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Statut invalide' }, { status: 400 });
+    }
+
+    await connectDB();
+
+    const doctor = await Doctor.findOne({ userId: authUser.userId }).lean();
+    if (!doctor) {
+      return NextResponse.json({ error: 'Profil médecin introuvable' }, { status: 404 });
+    }
+
+    const appointment = await Appointment.findOneAndUpdate(
+      { _id: appointmentId, doctorId: doctor._id },
+      { status, ...(notes !== undefined && { notes }) },
+      { new: true }
+    ).populate('patientId', 'firstName lastName email phone');
+
+    if (!appointment) {
+      return NextResponse.json({ error: 'Rendez-vous introuvable' }, { status: 404 });
+    }
+
+    return NextResponse.json({ appointment });
+  } catch (error) {
+    console.error('Pro appointments PUT error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const authUser = await getAuthUser(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const appointmentId = searchParams.get('id');
+
+    if (!appointmentId) {
+      return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    }
+
+    await connectDB();
+
+    const doctor = await Doctor.findOne({ userId: authUser.userId }).lean();
+    if (!doctor) {
+      return NextResponse.json({ error: 'Profil médecin introuvable' }, { status: 404 });
+    }
+
+    const appointment = await Appointment.findOneAndDelete({
+      _id: appointmentId,
+      doctorId: doctor._id,
+    });
+
+    if (!appointment) {
+      return NextResponse.json({ error: 'Rendez-vous introuvable' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Pro appointments DELETE error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

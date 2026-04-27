@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Star, User, Calendar, MessageSquare, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, User, Calendar, Filter, Loader2, AlertCircle } from 'lucide-react';
 
 interface Review {
-  id: string;
+  _id: string;
   patientName: string;
   rating: number;
   date: string;
@@ -13,64 +13,52 @@ interface Review {
 }
 
 export default function ReviewsPage() {
-  const [reviews] = useState<Review[]>([
-    {
-      id: '1',
-      patientName: 'Mamadou Diallo',
-      rating: 5,
-      date: '2024-04-15',
-      comment: 'Excellent médecin, très professionnel et à l\'écoute. Je recommande vivement!',
-      verified: true,
-    },
-    {
-      id: '2',
-      patientName: 'Aissatou Bah',
-      rating: 5,
-      date: '2024-04-14',
-      comment: 'Service impeccable, consultation rapide et efficace.',
-      verified: true,
-    },
-    {
-      id: '3',
-      patientName: 'Ibrahima Sow',
-      rating: 4,
-      date: '2024-04-13',
-      comment: 'Bon médecin, mais un peu d\'attente avant la consultation.',
-      verified: true,
-    },
-    {
-      id: '4',
-      patientName: 'Fatoumata Diallo',
-      rating: 5,
-      date: '2024-04-12',
-      comment: 'Très satisfait du traitement et des conseils reçus.',
-      verified: true,
-    },
-  ]);
-
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [rating, setRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filterRating, setFilterRating] = useState('all');
 
-  const filteredReviews = reviews.filter((review) => {
-    if (filterRating === 'all') return true;
-    return review.rating === parseInt(filterRating);
-  });
+  useEffect(() => {
+    fetch('/api/pro/reviews')
+      .then(r => r.json())
+      .then(data => {
+        if (data.reviews !== undefined) {
+          setReviews(data.reviews);
+          setRating(data.rating || 0);
+          setReviewCount(data.reviewCount || 0);
+        } else {
+          setError(data.error || 'Erreur lors du chargement');
+        }
+      })
+      .catch(() => setError('Erreur réseau'))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const averageRating = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
-  const totalReviews = reviews.length;
+  const filtered = reviews.filter(r =>
+    filterRating === 'all' || r.rating === parseInt(filterRating)
+  );
 
-  const renderStars = (rating: number) => {
+  const satisfaction = reviewCount > 0
+    ? Math.round((reviews.filter(r => r.rating >= 4).length / reviewCount) * 100)
+    : 0;
+
+  const renderStars = (n: number) => (
+    <div className="flex items-center gap-1">
+      {[...Array(5)].map((_, i) => (
+        <Star key={i} size={16} className={i < n ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+      ))}
+    </div>
+  );
+
+  if (loading) {
     return (
-      <div className="flex items-center gap-1">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            size={16}
-            className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-          />
-        ))}
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -79,26 +67,33 @@ export default function ReviewsPage() {
         <p className="text-gray-600 mt-2">Consultez les avis de vos patients</p>
       </div>
 
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <AlertCircle size={20} />
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-gray-600 text-sm font-medium">Note Moyenne</p>
           <div className="flex items-center gap-3 mt-3">
-            <span className="text-4xl font-bold text-gray-800">{averageRating}</span>
+            <span className="text-4xl font-bold text-gray-800">{rating.toFixed(1)}</span>
             <div>
-              {renderStars(Math.round(parseFloat(averageRating)))}
+              {renderStars(Math.round(rating))}
               <p className="text-xs text-gray-600 mt-1">sur 5</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600 text-sm font-medium">Total d\'Avis</p>
-          <p className="text-4xl font-bold text-gray-800 mt-3">{totalReviews}</p>
+          <p className="text-gray-600 text-sm font-medium">Total d&apos;Avis</p>
+          <p className="text-4xl font-bold text-gray-800 mt-3">{reviewCount}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <p className="text-gray-600 text-sm font-medium">Taux de Satisfaction</p>
-          <p className="text-4xl font-bold text-green-600 mt-3">96%</p>
+          <p className="text-4xl font-bold text-green-600 mt-3">{satisfaction}%</p>
         </div>
       </div>
 
@@ -120,35 +115,43 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {filteredReviews.map((review) => (
-          <div key={review.id} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="text-blue-600" size={20} />
+      {filtered.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 font-medium">Aucun avis pour le moment</p>
+          <p className="text-gray-400 text-sm mt-1">
+            Les avis de vos patients apparaîtront ici après leurs consultations
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((review) => (
+            <div key={review._id} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="text-blue-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800">{review.patientName}</p>
+                    {review.verified && (
+                      <p className="text-xs text-green-600 font-medium">✓ Avis vérifié</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-800">{review.patientName}</p>
-                  {review.verified && (
-                    <p className="text-xs text-green-600 font-medium">✓ Avis vérifié</p>
-                  )}
-                </div>
+                {renderStars(review.rating)}
               </div>
-              {renderStars(review.rating)}
+              <p className="text-gray-700 mb-3">{review.comment}</p>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span className="flex items-center gap-1">
+                  <Calendar size={14} />
+                  {new Date(review.date).toLocaleDateString('fr-FR')}
+                </span>
+              </div>
             </div>
-
-            <p className="text-gray-700 mb-3">{review.comment}</p>
-
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <Calendar size={14} />
-                {new Date(review.date).toLocaleDateString('fr-FR')}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
