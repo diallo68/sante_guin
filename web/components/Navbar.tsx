@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare } from 'lucide-react';
+import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare, ShieldCheck } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -68,9 +68,6 @@ export default function Navbar() {
             <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium">
               Pharmacies
             </Link>
-            <Link href="/#pro" className="text-orange-600 hover:text-orange-700 font-semibold">
-              Option Pro
-            </Link>
 
             {loading ? (
               <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
@@ -93,6 +90,16 @@ export default function Navbar() {
                       <p className="font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
                       <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                     </div>
+                    {user.role === 'admin' && (
+                      <Link
+                        href="/admin/dashboard"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-teal-700 hover:bg-teal-50 font-semibold"
+                      >
+                        <ShieldCheck size={16} />
+                        Tableau de bord Admin
+                      </Link>
+                    )}
                     {(user.role === 'doctor' || user.role === 'pharmacist') && (
                       <Link
                         href="/pro/dashboard"
@@ -171,13 +178,15 @@ export default function Navbar() {
           <Link href="/pharmacies" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
             Pharmacies
           </Link>
-          <Link href="/#pro" onClick={() => setMenuOpen(false)} className="block py-2 text-orange-600 font-semibold">
-            Option Pro
-          </Link>
           <div className="border-t border-gray-200 pt-3">
             {user ? (
               <>
                 <p className="text-sm font-semibold text-gray-900 mb-2">{user.firstName} {user.lastName}</p>
+                {user.role === 'admin' && (
+                  <Link href="/admin/dashboard" onClick={() => setMenuOpen(false)} className="block py-2 text-teal-700 font-semibold">
+                    Tableau de bord Admin
+                  </Link>
+                )}
                 {(user.role === 'doctor' || user.role === 'pharmacist') && (
                   <Link href="/pro/dashboard" onClick={() => setMenuOpen(false)} className="block py-2 text-blue-600 font-medium">
                     Espace Pro
