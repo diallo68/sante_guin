@@ -248,8 +248,9 @@ export default async function Home() {
       </section>
 
       {/* ── PROFESSIONNELS DE SANTÉ ── */}
-      <section className="bg-white py-16">
+      <section className="bg-gray-50 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 px-8 md:px-12 py-10">
           <div className="flex items-end justify-between mb-10">
             <div>
               <span className="text-teal-600 text-sm font-bold uppercase tracking-wider">Partenaires vérifiés</span>
@@ -344,6 +345,7 @@ export default async function Home() {
                 </div>
               </Link>
             ))}
+          </div>
           </div>
         </div>
       </section>
