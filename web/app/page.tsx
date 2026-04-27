@@ -134,7 +134,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── PRO BANNER ── */}
+      {/* ── PRO + PARTENAIRES + COMMENT ÇA MARCHE — bloc unifié ── */}
       <section id="pro" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl overflow-hidden shadow-xl border border-gray-100">
@@ -243,137 +243,112 @@ export default async function Home() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+            {/* ── PARTENAIRES VÉRIFIÉS ── */}
+            <div className="bg-white px-8 md:px-12 py-10 border-t border-gray-100">
+              <div className="flex items-end justify-between mb-10">
+                <div>
+                  <span className="text-teal-600 text-sm font-bold uppercase tracking-wider">Partenaires vérifiés</span>
+                  <h2 className="text-3xl font-bold text-gray-900 mt-1">Professionnels de santé</h2>
+                  <p className="text-gray-500 mt-1">Médecins et pharmacies certifiés, disponibles pour vous</p>
+                </div>
+                <div className="hidden md:flex items-center gap-4">
+                  <Link href="/doctors" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                    Tous les médecins <ArrowRight size={16} />
+                  </Link>
+                  <Link href="/pharmacies" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold text-sm">
+                    Toutes les pharmacies <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </div>
 
-      {/* ── PROFESSIONNELS DE SANTÉ ── */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 px-8 md:px-12 py-10">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <span className="text-teal-600 text-sm font-bold uppercase tracking-wider">Partenaires vérifiés</span>
-              <h2 className="text-3xl font-bold text-gray-900 mt-1">Professionnels de santé</h2>
-              <p className="text-gray-500 mt-1">Médecins et pharmacies certifiés, disponibles pour vous</p>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <Link href="/doctors" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm">
-                Tous les médecins <ArrowRight size={16} />
-              </Link>
-              <Link href="/pharmacies" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold text-sm">
-                Toutes les pharmacies <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Onglet Médecins */}
-          <div className="mb-4 flex items-center gap-2">
-            <Stethoscope size={18} className="text-blue-600" />
-            <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Médecins</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-            {proSubscribers.filter(p => p.type === 'doctor').map((p) => (
-              <Link key={p.id} href={p.href} className="bg-blue-50 border border-blue-100 rounded-2xl p-5 hover:shadow-lg hover:border-blue-300 transition-all group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                    👨‍⚕️
-                  </div>
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">Pro ✓</span>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-0.5">{p.name}</h3>
-                {'specialty' in p && p.specialty && (
-                  <p className="text-sm text-blue-600 font-medium mb-3">{p.specialty}</p>
-                )}
-                <div className="space-y-1.5 mb-4">
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-                    <MapPin size={12} /> {p.address}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-                    <Clock size={12} /> {p.hours}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Star size={13} className="fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-bold text-gray-900">{p.rating}</span>
-                    <span className="text-xs text-gray-400">({p.reviews})</span>
-                  </div>
-                  <span className="text-xs text-blue-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Voir <ChevronRight size={12} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Onglet Pharmacies */}
-          <div className="mb-4 flex items-center gap-2">
-            <Package size={18} className="text-emerald-600" />
-            <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Pharmacies</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {proSubscribers.filter(p => p.type === 'pharmacy').map((p) => (
-              <Link key={p.id} href={p.href} className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 hover:shadow-lg hover:border-emerald-300 transition-all group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">
-                    💊
-                  </div>
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">Pro ✓</span>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-3">{p.name}</h3>
-                <div className="space-y-1.5 mb-4">
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-                    <MapPin size={12} /> {p.address}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs">
-                    <Clock size={12} /> {p.hours}
-                    {p.hours === '24h/24' && (
-                      <span className="ml-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full font-bold">Ouvert</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <Star size={13} className="fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-bold text-gray-900">{p.rating}</span>
-                    <span className="text-xs text-gray-400">({p.reviews})</span>
-                  </div>
-                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Voir <ChevronRight size={12} />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── COMMENT ÇA MARCHE ── */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 px-8 md:px-12 py-10">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Comment ça marche ?</h2>
-              <p className="text-gray-500 text-lg">Prendre rendez-vous n'a jamais été aussi simple</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {steps.map((step, i) => (
-                <div key={i} className="relative text-center">
-                  {i < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-3/4 w-1/2 border-t-2 border-dashed border-teal-200 z-0" />
-                  )}
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-16 h-16 bg-teal-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg">
-                      {step.icon}
+              <div className="mb-4 flex items-center gap-2">
+                <Stethoscope size={18} className="text-blue-600" />
+                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Médecins</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+                {proSubscribers.filter(p => p.type === 'doctor').map((p) => (
+                  <Link key={p.id} href={p.href} className="bg-blue-50 border border-blue-100 rounded-2xl p-5 hover:shadow-lg hover:border-blue-300 transition-all group">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">👨‍⚕️</div>
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">Pro ✓</span>
                     </div>
-                    <span className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">{step.num}</span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                    <p className="text-gray-500 leading-relaxed">{step.desc}</p>
+                    <h3 className="font-bold text-gray-900 mb-0.5">{p.name}</h3>
+                    {'specialty' in p && p.specialty && (
+                      <p className="text-sm text-blue-600 font-medium mb-3">{p.specialty}</p>
+                    )}
+                    <div className="space-y-1.5 mb-4">
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs"><MapPin size={12} /> {p.address}</div>
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs"><Clock size={12} /> {p.hours}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Star size={13} className="fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-bold text-gray-900">{p.rating}</span>
+                        <span className="text-xs text-gray-400">({p.reviews})</span>
+                      </div>
+                      <span className="text-xs text-blue-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Voir <ChevronRight size={12} /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mb-4 flex items-center gap-2">
+                <Package size={18} className="text-emerald-600" />
+                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Pharmacies</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {proSubscribers.filter(p => p.type === 'pharmacy').map((p) => (
+                  <Link key={p.id} href={p.href} className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 hover:shadow-lg hover:border-emerald-300 transition-all group">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">💊</div>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">Pro ✓</span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-3">{p.name}</h3>
+                    <div className="space-y-1.5 mb-4">
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs"><MapPin size={12} /> {p.address}</div>
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs">
+                        <Clock size={12} /> {p.hours}
+                        {p.hours === '24h/24' && (
+                          <span className="ml-1 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full font-bold">Ouvert</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Star size={13} className="fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-bold text-gray-900">{p.rating}</span>
+                        <span className="text-xs text-gray-400">({p.reviews})</span>
+                      </div>
+                      <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Voir <ChevronRight size={12} /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* ── COMMENT ÇA MARCHE ── */}
+            <div className="bg-gray-50 px-8 md:px-12 py-10 border-t border-gray-100">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">Comment ça marche ?</h2>
+                <p className="text-gray-500 text-lg">Prendre rendez-vous n'a jamais été aussi simple</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {steps.map((step, i) => (
+                  <div key={i} className="relative text-center">
+                    {i < steps.length - 1 && (
+                      <div className="hidden md:block absolute top-8 left-3/4 w-1/2 border-t-2 border-dashed border-teal-200 z-0" />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center">
+                      <div className="w-16 h-16 bg-teal-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg">
+                        {step.icon}
+                      </div>
+                      <span className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">{step.num}</span>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                      <p className="text-gray-500 leading-relaxed">{step.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
