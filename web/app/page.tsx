@@ -353,33 +353,36 @@ export default async function Home() {
       {/* ── COMMENT ÇA MARCHE ── */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Comment ça marche ?</h2>
-            <p className="text-gray-500 text-lg">Prendre rendez-vous n'a jamais été aussi simple</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {steps.map((step, i) => (
-              <div key={i} className="relative text-center">
-                {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-3/4 w-1/2 border-t-2 border-dashed border-teal-200 z-0" />
-                )}
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-16 h-16 bg-teal-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg">
-                    {step.icon}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 px-8 md:px-12 py-10">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Comment ça marche ?</h2>
+              <p className="text-gray-500 text-lg">Prendre rendez-vous n'a jamais été aussi simple</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {steps.map((step, i) => (
+                <div key={i} className="relative text-center">
+                  {i < steps.length - 1 && (
+                    <div className="hidden md:block absolute top-8 left-3/4 w-1/2 border-t-2 border-dashed border-teal-200 z-0" />
+                  )}
+                  <div className="relative z-10 flex flex-col items-center">
+                    <div className="w-16 h-16 bg-teal-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg">
+                      {step.icon}
+                    </div>
+                    <span className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">{step.num}</span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                    <p className="text-gray-500 leading-relaxed">{step.desc}</p>
                   </div>
-                  <span className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">{step.num}</span>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-gray-500 leading-relaxed">{step.desc}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <footer className="bg-gray-50 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-slate-900 text-white rounded-3xl px-8 md:px-12 py-12">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-10">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
@@ -434,6 +437,7 @@ export default async function Home() {
               <span className="w-2 h-2 bg-green-500 rounded-full" />
               Tous les systèmes sont opérationnels
             </p>
+          </div>
           </div>
         </div>
       </footer>
