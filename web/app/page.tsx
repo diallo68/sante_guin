@@ -149,7 +149,7 @@ export default async function Home() {
                   <div>
                     <span className="text-teal-400 text-xs font-bold uppercase tracking-widest">Pour les professionnels de santé</span>
                     <h2 className="text-2xl md:text-3xl font-bold text-white mt-1">
-                      Guinée Santé <span className="text-teal-400">Pro</span>
+                      Mondocteur <span className="text-teal-400">Pro</span>
                     </h2>
                     <p className="text-gray-300 mt-1 text-sm">Gérez votre cabinet, vos patients et votre agenda en un seul endroit.</p>
                   </div>

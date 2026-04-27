@@ -9,6 +9,7 @@ export interface IUser extends Document {
   passwordHash: string;
   role: 'patient' | 'doctor' | 'pharmacist' | 'admin';
   isVerified: boolean;
+  isSuspended: boolean;
   favorites: {
     doctors: mongoose.Types.ObjectId[];
     pharmacies: mongoose.Types.ObjectId[];
@@ -35,6 +36,7 @@ const UserSchema = new Schema<IUser>(
       default: 'patient',
     },
     isVerified: { type: Boolean, default: false },
+    isSuspended: { type: Boolean, default: false },
     favorites: {
       doctors: [{ type: Schema.Types.ObjectId, ref: 'Doctor' }],
       pharmacies: [{ type: Schema.Types.ObjectId, ref: 'Pharmacy' }],

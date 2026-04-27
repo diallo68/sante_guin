@@ -104,7 +104,7 @@ export default function ProAvantagesPage() {
       telephone: '',
       email: '',
       localisation: '',
-      message: `Bonjour, je suis intéressé(e) par l'offre ${planName} de Guinée Santé Pro. Je souhaite obtenir plus d'informations et procéder à la souscription.`,
+      message: `Bonjour, je suis intéressé(e) par l'offre ${planName} de Mondocteur Pro. Je souhaite obtenir plus d'informations et procéder à la souscription.`,
     });
     setSent(false);
     setModal({ open: true, planName });
@@ -140,7 +140,7 @@ export default function ProAvantagesPage() {
             </div>
             <div>
               <span className="text-teal-400 text-xs font-bold uppercase tracking-widest">Pour les professionnels de santé</span>
-              <h1 className="text-3xl md:text-4xl font-bold">Guinée Santé <span className="text-teal-400">Pro</span></h1>
+              <h1 className="text-3xl md:text-4xl font-bold">Mondocteur <span className="text-teal-400">Pro</span></h1>
             </div>
           </div>
           <p className="text-gray-300 text-lg max-w-2xl mb-4">

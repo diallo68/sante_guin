@@ -14,6 +14,10 @@ export interface IPharmacy extends Document {
   rating: number;
   reviewCount: number;
   isVerified: boolean;
+  isAvailable: boolean;
+  subscriptionStatus: 'active' | 'suspended' | 'expired' | 'none';
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +36,14 @@ const PharmacySchema = new Schema<IPharmacy>(
     rating: { type: Number, default: 0, min: 0, max: 5 },
     reviewCount: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
+    isAvailable: { type: Boolean, default: true },
+    subscriptionStatus: {
+      type: String,
+      enum: ['active', 'suspended', 'expired', 'none'],
+      default: 'none',
+    },
+    subscriptionPlan: { type: String },
+    subscriptionExpiresAt: { type: Date },
   },
   { timestamps: true }
 );

@@ -14,6 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const allowed: Record<string, unknown> = {};
   if (body.role) allowed.role = body.role;
   if (typeof body.isVerified === 'boolean') allowed.isVerified = body.isVerified;
+  if (typeof body.isSuspended === 'boolean') allowed.isSuspended = body.isSuspended;
 
   const user = await User.findByIdAndUpdate(params.id, allowed, { new: true }).select('-passwordHash');
   if (!user) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });

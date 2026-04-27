@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/auth';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 import Doctor from '@/models/Doctor';
+import User from '@/models/User';
+import { sendEmail, emailNewMessage } from '@/lib/email';
 
 // GET /api/conversations/[id] — messages + mark as read
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -83,6 +85,45 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await Conversation.findByIdAndUpdate(id, {
     lastMessage: content.trim(),
     lastMessageAt: new Date(),
+  });
+
+  // Notification email au destinataire (non-bloquant)
+  Promise.resolve().then(async () => {
+    try {
+      const recipientId = isDoctor ? String(conv.patientId) : String(conv.doctorId);
+      const senderName = isDoctor
+        ? `Dr. ${(await Doctor.findOne({ userId: authUser.userId }).select('firstName lastName').lean())?.firstName}`
+        : undefined;
+
+      const recipientUser = await User.findById(isDoctor ? conv.patientId : undefined).select('email firstName lastName').lean();
+      const senderUser = await User.findById(authUser.userId).select('firstName lastName').lean();
+
+      if (isDoctor && recipientUser?.email && senderUser) {
+        const doctorDoc = await Doctor.findOne({ userId: authUser.userId }).select('firstName lastName').lean();
+        const tpl = emailNewMessage({
+          recipientName: `${recipientUser.firstName} ${recipientUser.lastName}`,
+          senderName: doctorDoc ? `Dr. ${doctorDoc.firstName} ${doctorDoc.lastName}` : senderUser.firstName,
+          preview: content.trim(),
+          conversationId: id,
+          role: 'patient',
+        });
+        sendEmail({ to: recipientUser.email, ...tpl }).catch(() => {});
+      } else if (!isDoctor) {
+        // Notify doctor: get doctor's user email
+        const doctorDoc = await Doctor.findById(conv.doctorId).select('userId email').lean();
+        const doctorUser = await User.findById(doctorDoc?.userId).select('email firstName lastName').lean();
+        if (doctorUser?.email && senderUser) {
+          const tpl = emailNewMessage({
+            recipientName: `${doctorUser.firstName} ${doctorUser.lastName}`,
+            senderName: `${senderUser.firstName} ${senderUser.lastName}`,
+            preview: content.trim(),
+            conversationId: id,
+            role: 'doctor',
+          });
+          sendEmail({ to: doctorUser.email, ...tpl }).catch(() => {});
+        }
+      }
+    } catch (_) {}
   });
 
   return NextResponse.json({ message }, { status: 201 });

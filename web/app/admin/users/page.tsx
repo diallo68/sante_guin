@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, ChevronLeft, ChevronRight, Trash2, ShieldCheck } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trash2, ShieldCheck, PauseCircle, CheckCircle } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -11,6 +11,7 @@ interface User {
   phone?: string;
   role: string;
   isVerified: boolean;
+  isSuspended: boolean;
   createdAt: string;
 }
 
@@ -55,16 +56,16 @@ export default function AdminUsersPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const changeRole = async (id: string, role: string) => {
+  const patchUser = async (id: string, update: Record<string, unknown>) => {
     setUpdating(id);
     const res = await fetch(`/api/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(update),
     });
     if (res.ok) {
       const data = await res.json();
-      setUsers(prev => prev.map(u => u._id === id ? { ...u, role: data.user.role } : u));
+      setUsers(prev => prev.map(u => u._id === id ? { ...u, ...data.user } : u));
     }
     setUpdating(null);
   };
@@ -130,7 +131,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {users.map(u => (
-                  <tr key={u._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={u._id} className={`hover:bg-gray-50 transition-colors ${u.isSuspended ? 'opacity-60 bg-red-50' : ''}`}>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
@@ -143,6 +144,9 @@ export default function AdminUsersPage() {
                               <ShieldCheck size={10} /> Vérifié
                             </span>
                           )}
+                          {u.isSuspended && (
+                            <span className="text-xs text-red-500 font-bold">Suspendu</span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -154,7 +158,7 @@ export default function AdminUsersPage() {
                       <select
                         value={u.role}
                         disabled={updating === u._id}
-                        onChange={e => changeRole(u._id, e.target.value)}
+                        onChange={e => patchUser(u._id, { role: e.target.value })}
                         className={`text-xs font-bold px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}
                       >
                         {['patient', 'doctor', 'pharmacist', 'admin'].map(r => (
@@ -166,13 +170,23 @@ export default function AdminUsersPage() {
                       {new Date(u.createdAt).toLocaleDateString('fr-FR')}
                     </td>
                     <td className="px-5 py-3">
-                      <button
-                        onClick={() => deleteUser(u._id, `${u.firstName} ${u.lastName}`)}
-                        disabled={updating === u._id}
-                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition disabled:opacity-40"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => patchUser(u._id, { isSuspended: !u.isSuspended })}
+                          disabled={updating === u._id}
+                          title={u.isSuspended ? 'Réactiver' : 'Suspendre'}
+                          className={`p-1.5 rounded-lg transition disabled:opacity-40 ${u.isSuspended ? 'text-green-600 hover:bg-green-50' : 'text-orange-500 hover:bg-orange-50'}`}
+                        >
+                          {u.isSuspended ? <CheckCircle size={15} /> : <PauseCircle size={15} />}
+                        </button>
+                        <button
+                          onClick={() => deleteUser(u._id, `${u.firstName} ${u.lastName}`)}
+                          disabled={updating === u._id}
+                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition disabled:opacity-40"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

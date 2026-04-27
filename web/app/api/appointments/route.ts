@@ -6,7 +6,7 @@ import Doctor from '@/models/Doctor';
 import User from '@/models/User';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
-import { sendAppointmentConfirmation } from '@/lib/mailer';
+import { sendEmail, emailAppointmentConfirmation } from '@/lib/email';
 
 export async function GET(req: NextRequest) {
   try {
@@ -97,15 +97,19 @@ export async function POST(req: NextRequest) {
           readBy: [authUser.userId],
         });
 
-        // Email optionnel
+        // Email confirmation au patient
         if (patient.email) {
-          sendAppointmentConfirmation({
-            patientEmail: patient.email,
-            patientName: `${patient.firstName} ${patient.lastName}`,
+          const dateFormatted2 = new Date(date).toLocaleDateString('fr-FR', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+          });
+          const tpl = emailAppointmentConfirmation({
+            patientFirstName: patient.firstName,
             doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
-            date,
+            date: dateFormatted2,
             time,
-          }).catch(err => console.error('Email error:', err));
+            reason,
+          });
+          sendEmail({ to: patient.email, ...tpl }).catch(() => {});
         }
       }
     }).catch(() => {});

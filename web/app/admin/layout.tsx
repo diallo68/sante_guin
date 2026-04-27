@@ -4,7 +4,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Stethoscope, Calendar,
+  LayoutDashboard, Users, Briefcase, Calendar,
   LogOut, Menu, X, ShieldCheck,
 } from 'lucide-react';
 
@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const menu = [
     { label: 'Tableau de bord', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Utilisateurs', href: '/admin/users', icon: Users },
-    { label: 'Médecins', href: '/admin/doctors', icon: Stethoscope },
+    { label: 'Gestion Pro', href: '/admin/gestion-pro', icon: Briefcase },
     { label: 'Rendez-vous', href: '/admin/appointments', icon: Calendar },
   ];
 

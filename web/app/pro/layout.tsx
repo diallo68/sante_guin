@@ -95,7 +95,7 @@ export default function ProLayout({ children }: ProLayoutProps) {
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           {sidebarOpen && (
-            <h1 className="text-xl font-bold text-blue-600">GS Pro</h1>
+            <h1 className="text-xl font-bold text-teal-600">MD Pro</h1>
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

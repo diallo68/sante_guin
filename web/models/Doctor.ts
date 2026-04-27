@@ -16,6 +16,9 @@ export interface IDoctor extends Document {
   reviewCount: number;
   isVerified: boolean;
   isAvailable: boolean;
+  subscriptionStatus: 'active' | 'suspended' | 'expired' | 'none';
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: Date;
   consultationFee?: number;
   languages: string[];
   createdAt: Date;
@@ -38,6 +41,13 @@ const DoctorSchema = new Schema<IDoctor>(
     reviewCount: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
     isAvailable: { type: Boolean, default: true },
+    subscriptionStatus: {
+      type: String,
+      enum: ['active', 'suspended', 'expired', 'none'],
+      default: 'none',
+    },
+    subscriptionPlan: { type: String },
+    subscriptionExpiresAt: { type: Date },
     consultationFee: { type: Number },
     languages: { type: [String], default: ['Français'] },
   },
