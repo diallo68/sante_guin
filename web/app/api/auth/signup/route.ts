@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
 import { signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
+import Doctor from '@/models/Doctor';
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,6 +57,19 @@ export async function POST(req: NextRequest) {
       passwordHash,
       role,
     });
+
+    // Créer le profil Doctor si le rôle est médecin
+    if (role === 'doctor') {
+      await Doctor.create({
+        userId: user._id,
+        firstName,
+        lastName,
+        specialty: 'Médecin généraliste',
+        email: email || undefined,
+        phone: phone || undefined,
+        city: 'Conakry',
+      });
+    }
 
     const token = await signToken({
       userId: user._id.toString(),
