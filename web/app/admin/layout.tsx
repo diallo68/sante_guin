@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Briefcase, Calendar,
-  LogOut, Menu, X, ShieldCheck,
+  LogOut, Menu, X, ShieldCheck, UserCircle,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -36,6 +36,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { label: 'Utilisateurs', href: '/admin/users', icon: Users },
     { label: 'Gestion Pro', href: '/admin/gestion-pro', icon: Briefcase },
     { label: 'Rendez-vous', href: '/admin/appointments', icon: Calendar },
+    { label: 'Mon Profil', href: '/admin/profil', icon: UserCircle },
   ];
 
   return (

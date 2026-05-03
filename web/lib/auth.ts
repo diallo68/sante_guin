@@ -10,7 +10,7 @@ export const JWT_COOKIE = 'gs_token';
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: 'patient' | 'doctor' | 'pharmacist' | 'admin';
+  role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
 }
 
 export async function signToken(payload: JWTPayload): Promise<string> {
