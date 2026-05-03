@@ -68,6 +68,9 @@ export default function Navbar() {
             <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium">
               Pharmacies
             </Link>
+            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium">
+              Laboratoires
+            </Link>
 
             {loading ? (
               <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
@@ -177,6 +180,9 @@ export default function Navbar() {
           </Link>
           <Link href="/pharmacies" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
             Pharmacies
+          </Link>
+          <Link href="/laboratories" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
+            Laboratoires
           </Link>
           <div className="border-t border-gray-200 pt-3">
             {user ? (

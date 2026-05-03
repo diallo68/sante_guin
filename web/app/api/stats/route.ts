@@ -2,15 +2,17 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
+import Laboratory from '@/models/Laboratory';
 import User from '@/models/User';
 
 export async function GET() {
   try {
     await connectDB();
 
-    const [doctorCount, pharmacyCount, patientCount, ratingAgg] = await Promise.all([
+    const [doctorCount, pharmacyCount, laboratoryCount, patientCount, ratingAgg] = await Promise.all([
       Doctor.countDocuments(),
       Pharmacy.countDocuments(),
+      Laboratory.countDocuments(),
       User.countDocuments({ role: 'patient' }),
       Doctor.aggregate([
         { $match: { rating: { $gt: 0 } } },
@@ -23,6 +25,7 @@ export async function GET() {
     return NextResponse.json({
       doctors: doctorCount,
       pharmacies: pharmacyCount,
+      laboratories: laboratoryCount,
       patients: patientCount,
       avgRating: Math.round(avgRating * 10) / 10,
     });

@@ -7,12 +7,13 @@ export interface IUser extends Document {
   email?: string;
   phone?: string;
   passwordHash: string;
-  role: 'patient' | 'doctor' | 'pharmacist' | 'admin';
+  role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
   isVerified: boolean;
   isSuspended: boolean;
   favorites: {
     doctors: mongoose.Types.ObjectId[];
     pharmacies: mongoose.Types.ObjectId[];
+    laboratories: mongoose.Types.ObjectId[];
   };
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +33,7 @@ const UserSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['patient', 'doctor', 'pharmacist', 'admin'],
+      enum: ['patient', 'doctor', 'pharmacist', 'laboratorist', 'admin'],
       default: 'patient',
     },
     isVerified: { type: Boolean, default: false },
@@ -40,6 +41,7 @@ const UserSchema = new Schema<IUser>(
     favorites: {
       doctors: [{ type: Schema.Types.ObjectId, ref: 'Doctor' }],
       pharmacies: [{ type: Schema.Types.ObjectId, ref: 'Pharmacy' }],
+      laboratories: [{ type: Schema.Types.ObjectId, ref: 'Laboratory' }],
     },
   },
   { timestamps: true }

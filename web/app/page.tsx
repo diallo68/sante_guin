@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {
   ArrowRight, Search, Star, MapPin, Clock, CheckCircle,
   Stethoscope, Calendar, FileText, BarChart3, MessageSquare,
-  Shield, Zap, Users, Phone, ChevronRight, Package,
+  Shield, Zap, Users, Phone, ChevronRight, Package, FlaskConical,
 } from 'lucide-react';
 
 const proSubscribers = [
@@ -12,6 +12,9 @@ const proSubscribers = [
   { id: '4', name: 'Pharmacie Centrale', type: 'pharmacy', address: 'Plateau, Conakry', rating: 4.6, reviews: 98, hours: '08:00 - 22:00', href: '/pharmacies' },
   { id: '5', name: 'Pharmacie Santé Plus', type: 'pharmacy', address: 'Dixinn, Conakry', rating: 4.8, reviews: 203, hours: '24h/24', href: '/pharmacies' },
   { id: '6', name: 'Pharmacie du Plateau', type: 'pharmacy', address: 'Plateau, Conakry', rating: 4.5, reviews: 98, hours: '07:00 - 23:00', href: '/pharmacies' },
+  { id: '7', name: 'Labo BioSanté', type: 'laboratory', address: 'Kaloum, Conakry', rating: 4.7, reviews: 64, hours: '07:00 - 18:00', href: '/laboratories' },
+  { id: '8', name: 'Centre d\'Analyses Moderne', type: 'laboratory', address: 'Ratoma, Conakry', rating: 4.5, reviews: 41, hours: '07:30 - 17:30', href: '/laboratories' },
+  { id: '9', name: 'Laboratoire Conakry Med', type: 'laboratory', address: 'Dixinn, Conakry', rating: 4.8, reviews: 87, hours: '07:00 - 19:00', href: '/laboratories' },
 ];
 
 const steps = [
@@ -249,7 +252,7 @@ export default async function Home() {
                 <div>
                   <span className="text-teal-600 text-sm font-bold uppercase tracking-wider">Partenaires vérifiés</span>
                   <h2 className="text-3xl font-bold text-gray-900 mt-1">Professionnels de santé</h2>
-                  <p className="text-gray-500 mt-1">Médecins et pharmacies certifiés, disponibles pour vous</p>
+                  <p className="text-gray-500 mt-1">Médecins, pharmacies et laboratoires certifiés, disponibles pour vous</p>
                 </div>
                 <div className="hidden md:flex items-center gap-4">
                   <Link href="/doctors" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm">
@@ -257,6 +260,9 @@ export default async function Home() {
                   </Link>
                   <Link href="/pharmacies" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold text-sm">
                     Toutes les pharmacies <ArrowRight size={16} />
+                  </Link>
+                  <Link href="/laboratories" className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-semibold text-sm">
+                    Tous les laboratoires <ArrowRight size={16} />
                   </Link>
                 </div>
               </div>
@@ -296,7 +302,7 @@ export default async function Home() {
                 <Package size={18} className="text-emerald-600" />
                 <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Pharmacies</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
                 {proSubscribers.filter(p => p.type === 'pharmacy').map((p) => (
                   <Link key={p.id} href={p.href} className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 hover:shadow-lg hover:border-emerald-300 transition-all group">
                     <div className="flex items-start justify-between mb-4">
@@ -320,6 +326,36 @@ export default async function Home() {
                         <span className="text-xs text-gray-400">({p.reviews})</span>
                       </div>
                       <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Voir <ChevronRight size={12} /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mb-4 flex items-center gap-2">
+                <FlaskConical size={18} className="text-teal-600" />
+                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">Laboratoires d&apos;analyse</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {proSubscribers.filter(p => p.type === 'laboratory').map((p) => (
+                  <Link key={p.id} href={p.href} className="bg-teal-50 border border-teal-100 rounded-2xl p-5 hover:shadow-lg hover:border-teal-300 transition-all group">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <FlaskConical size={24} className="text-teal-600" />
+                      </div>
+                      <span className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-bold rounded-full">Pro ✓</span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-3">{p.name}</h3>
+                    <div className="space-y-1.5 mb-4">
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs"><MapPin size={12} /> {p.address}</div>
+                      <div className="flex items-center gap-1.5 text-gray-500 text-xs"><Clock size={12} /> {p.hours}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Star size={13} className="fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-bold text-gray-900">{p.rating}</span>
+                        <span className="text-xs text-gray-400">({p.reviews})</span>
+                      </div>
+                      <span className="text-xs text-teal-600 font-semibold flex items-center gap-1 group-hover:gap-2 transition-all">Voir <ChevronRight size={12} /></span>
                     </div>
                   </Link>
                 ))}

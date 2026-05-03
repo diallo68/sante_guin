@@ -1,0 +1,17 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
+import Laboratory from '@/models/Laboratory';
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectDB();
+    const laboratory = await Laboratory.findById(params.id).lean();
+    if (!laboratory) return NextResponse.json({ error: 'Laboratoire introuvable' }, { status: 404 });
+    return NextResponse.json({ laboratory });
+  } catch {
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
