@@ -15,17 +15,19 @@ interface User {
   createdAt: string;
 }
 
-const ROLES = ['', 'patient', 'doctor', 'pharmacist', 'admin'];
+const ROLES = ['', 'patient', 'doctor', 'pharmacist', 'laboratorist', 'admin'];
 const ROLE_LABELS: Record<string, string> = {
   patient: 'Patient',
   doctor: 'Médecin',
   pharmacist: 'Pharmacien',
+  laboratorist: 'Laborantin',
   admin: 'Admin',
 };
 const ROLE_COLORS: Record<string, string> = {
   patient: 'bg-blue-100 text-blue-700',
   doctor: 'bg-teal-100 text-teal-700',
   pharmacist: 'bg-emerald-100 text-emerald-700',
+  laboratorist: 'bg-purple-100 text-purple-700',
   admin: 'bg-red-100 text-red-700',
 };
 
@@ -161,7 +163,7 @@ export default function AdminUsersPage() {
                         onChange={e => patchUser(u._id, { role: e.target.value })}
                         className={`text-xs font-bold px-2 py-1 rounded-full border-0 outline-none cursor-pointer ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-700'}`}
                       >
-                        {['patient', 'doctor', 'pharmacist', 'admin'].map(r => (
+                        {['patient', 'doctor', 'pharmacist', 'laboratorist', 'admin'].map(r => (
                           <option key={r} value={r}>{ROLE_LABELS[r]}</option>
                         ))}
                       </select>

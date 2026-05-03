@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, ShieldCheck, ShieldOff, ChevronLeft, ChevronRight, Eye, EyeOff, CheckCircle, PauseCircle, XCircle, RefreshCw } from 'lucide-react';
+import {
+  Search, ShieldCheck, ShieldOff, ChevronLeft, ChevronRight,
+  Eye, EyeOff, CheckCircle, PauseCircle, XCircle, RefreshCw, Trash2, BanIcon,
+} from 'lucide-react';
 
 interface ProItem {
   _id: string;
-  _type: 'doctor' | 'pharmacy';
+  _type: 'doctor' | 'pharmacy' | 'laboratory';
   firstName?: string;
   lastName?: string;
   name?: string;
@@ -29,6 +32,12 @@ const SUB_STATUS: Record<string, { label: string; color: string; icon: React.Rea
   none:      { label: 'Aucun',    color: 'bg-gray-100 text-gray-500',     icon: null },
 };
 
+const TYPE_STYLE: Record<string, { emoji: string; bg: string; text: string; label: string }> = {
+  doctor:     { emoji: '👨‍⚕️', bg: 'bg-teal-100',    text: 'text-teal-700',    label: 'Médecin' },
+  pharmacy:   { emoji: '💊',    bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Pharmacie' },
+  laboratory: { emoji: '🔬',    bg: 'bg-purple-100',  text: 'text-purple-700',  label: 'Laboratoire' },
+};
+
 const PLANS = ['Essentiel', 'Confort', 'Excellence'];
 
 export default function GestionProPage() {
@@ -43,6 +52,7 @@ export default function GestionProPage() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [planModal, setPlanModal] = useState<ProItem | null>(null);
   const [planForm, setPlanForm] = useState({ plan: 'Essentiel', expires: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<ProItem | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -75,6 +85,17 @@ export default function GestionProPage() {
       setItems(prev => prev.map(i => i._id === item._id ? { ...i, ...data.item } : i));
     }
     setUpdating(null);
+  };
+
+  const deletePro = async (item: ProItem) => {
+    setUpdating(item._id);
+    const res = await fetch(`/api/admin/gestion-pro/${item._type}/${item._id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setItems(prev => prev.filter(i => i._id !== item._id));
+      setTotal(t => t - 1);
+    }
+    setUpdating(null);
+    setDeleteConfirm(null);
   };
 
   const displayName = (item: ProItem) =>
@@ -114,9 +135,10 @@ export default function GestionProPage() {
         </div>
         <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
           className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none">
-          <option value="">Médecins + Cabinets</option>
+          <option value="">Tous les types</option>
           <option value="doctor">Médecins</option>
-          <option value="pharmacy">Cabinets / Pharmacies</option>
+          <option value="pharmacy">Pharmacies</option>
+          <option value="laboratory">Laboratoires</option>
         </select>
         <select value={subFilter} onChange={e => { setSubFilter(e.target.value); setPage(1); }}
           className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none">
@@ -151,13 +173,13 @@ export default function GestionProPage() {
               <tbody className="divide-y divide-gray-50">
                 {items.map(item => {
                   const sub = SUB_STATUS[item.subscriptionStatus] || SUB_STATUS.none;
-                  const busyKey = item._id;
+                  const ts = TYPE_STYLE[item._type] || TYPE_STYLE.doctor;
                   return (
                     <tr key={item._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${item._type === 'doctor' ? 'bg-teal-100 text-teal-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                            {item._type === 'doctor' ? '👨‍⚕️' : '💊'}
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${ts.bg} ${ts.text}`}>
+                            {ts.emoji}
                           </div>
                           <div>
                             <p className="font-semibold text-gray-900">{displayName(item)}</p>
@@ -166,8 +188,8 @@ export default function GestionProPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3 text-gray-600">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${item._type === 'doctor' ? 'bg-teal-50 text-teal-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                          {item._type === 'doctor' ? item.specialty || 'Médecin' : 'Pharmacie / Cabinet'}
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${ts.bg} ${ts.text}`}>
+                          {item._type === 'doctor' ? (item.specialty || 'Médecin') : ts.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -203,11 +225,11 @@ export default function GestionProPage() {
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-1 flex-wrap">
-                          {/* Activer abonnement */}
+                          {/* Activer / renouveler abonnement */}
                           <button
                             onClick={() => { setPlanModal(item); setPlanForm({ plan: item.subscriptionPlan || 'Essentiel', expires: '' }); }}
                             className="inline-flex items-center gap-1 px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg transition"
-                            title="Activer / réitérer abonnement"
+                            title="Activer / renouveler abonnement"
                           >
                             <RefreshCw size={11} /> Abonnement
                           </button>
@@ -231,6 +253,26 @@ export default function GestionProPage() {
                               <CheckCircle size={11} /> Réactiver
                             </button>
                           )}
+                          {/* Résiliation (annuler abonnement) */}
+                          {item.subscriptionStatus !== 'none' && (
+                            <button
+                              onClick={() => patch(item, { subscriptionStatus: 'none', subscriptionPlan: '' })}
+                              disabled={!!updating}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition disabled:opacity-40"
+                              title="Résilier l'abonnement"
+                            >
+                              <BanIcon size={11} /> Résilier
+                            </button>
+                          )}
+                          {/* Supprimer */}
+                          <button
+                            onClick={() => setDeleteConfirm(item)}
+                            disabled={!!updating}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg transition disabled:opacity-40"
+                            title="Supprimer définitivement"
+                          >
+                            <Trash2 size={11} /> Supprimer
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -289,6 +331,31 @@ export default function GestionProPage() {
                   Confirmer
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirm(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Supprimer ce profil ?</h3>
+            <p className="text-sm text-gray-500 mb-1">
+              <span className="font-semibold text-gray-800">{displayName(deleteConfirm)}</span> sera supprimé définitivement.
+            </p>
+            <p className="text-xs text-red-500 mb-6">Cette action est irréversible.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+                Annuler
+              </button>
+              <button
+                onClick={() => deletePro(deleteConfirm)}
+                disabled={!!updating}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition disabled:opacity-60"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

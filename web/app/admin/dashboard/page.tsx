@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Stethoscope, Calendar, ShieldCheck, UserPlus, Clock, CheckCircle, Package } from 'lucide-react';
+import { Users, Stethoscope, Calendar, ShieldCheck, UserPlus, Clock, CheckCircle, Package, FlaskConical } from 'lucide-react';
 
 interface Stats {
   totalUsers: number;
   totalDoctors: number;
   verifiedDoctors: number;
   totalPharmacies: number;
+  totalLaboratories: number;
   totalAppointments: number;
   pendingAppointments: number;
   confirmedAppointments: number;
@@ -40,13 +41,15 @@ export default function AdminDashboard() {
     { label: 'Utilisateurs total', value: stats.totalUsers, icon: Users, color: 'bg-blue-500', sub: `+${stats.newUsersThisMonth} ce mois` },
     { label: 'Médecins inscrits', value: stats.totalDoctors, icon: Stethoscope, color: 'bg-teal-500', sub: `${stats.verifiedDoctors} vérifiés` },
     { label: 'Pharmacies', value: stats.totalPharmacies, icon: Package, color: 'bg-emerald-500', sub: 'partenaires actifs' },
-    { label: 'Rendez-vous total', value: stats.totalAppointments, icon: Calendar, color: 'bg-purple-500', sub: `${stats.pendingAppointments} en attente` },
+    { label: 'Laboratoires', value: stats.totalLaboratories ?? 0, icon: FlaskConical, color: 'bg-purple-500', sub: 'analyses médicales' },
+    { label: 'Rendez-vous total', value: stats.totalAppointments, icon: Calendar, color: 'bg-indigo-500', sub: `${stats.pendingAppointments} en attente` },
   ];
 
   const roleMap: Record<string, string> = {
     patient: 'Patients',
     doctor: 'Médecins',
     pharmacist: 'Pharmaciens',
+    laboratorist: 'Laborantins',
     admin: 'Admins',
   };
 
@@ -58,7 +61,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {cards.map((c, i) => {
           const Icon = c.icon;
           return (

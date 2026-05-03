@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
+import Laboratory from '@/models/Laboratory';
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthUser(req);
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search') || '';
-  const type = searchParams.get('type') || ''; // 'doctor' | 'pharmacy'
+  const type = searchParams.get('type') || ''; // 'doctor' | 'pharmacy' | 'laboratory'
   const subStatus = searchParams.get('sub') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = 20;
@@ -50,6 +51,18 @@ export async function GET(req: NextRequest) {
       .limit(type === 'pharmacy' ? limit : 50)
       .lean();
     pharmacies.forEach(p => results.push({ ...p, _type: 'pharmacy' }));
+  }
+
+  if (!type || type === 'laboratory') {
+    const labFilter = { ...filter };
+    if (search) {
+      labFilter.$or = [{ name: { $regex: search, $options: 'i' } }] as any;
+    }
+    const laboratories = await Laboratory.find(labFilter)
+      .sort({ createdAt: -1 })
+      .limit(type === 'laboratory' ? limit : 50)
+      .lean();
+    laboratories.forEach(l => results.push({ ...l, _type: 'laboratory' }));
   }
 
   // Sort combined results by createdAt desc

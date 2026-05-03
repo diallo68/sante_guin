@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth';
 import User from '@/models/User';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
+import Laboratory from '@/models/Laboratory';
 import Appointment from '@/models/Appointment';
 
 export async function GET(req: NextRequest) {
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
     totalDoctors,
     verifiedDoctors,
     totalPharmacies,
+    totalLaboratories,
     totalAppointments,
     pendingAppointments,
     confirmedAppointments,
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
     Doctor.countDocuments(),
     Doctor.countDocuments({ isVerified: true }),
     Pharmacy.countDocuments(),
+    Laboratory.countDocuments(),
     Appointment.countDocuments(),
     Appointment.countDocuments({ status: 'pending' }),
     Appointment.countDocuments({ status: 'confirmed' }),
@@ -45,6 +48,7 @@ export async function GET(req: NextRequest) {
     totalDoctors,
     verifiedDoctors,
     totalPharmacies,
+    totalLaboratories,
     totalAppointments,
     pendingAppointments,
     confirmedAppointments,
