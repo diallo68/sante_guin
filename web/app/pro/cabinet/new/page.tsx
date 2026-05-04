@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Building2, Stethoscope, Package, MapPin, Phone, Mail,
+  Building2, Stethoscope, Package, FlaskConical, MapPin, Phone, Mail,
   Clock, CheckCircle, ChevronRight, ChevronLeft, X, Check, Users, Truck,
 } from 'lucide-react';
 
@@ -26,6 +26,15 @@ const SERVICES = [
   'Consultations', 'Urgences', 'Analyses biologiques', 'Imagerie médicale',
   'Chirurgie', 'Maternité', 'Pédiatrie', 'Vaccination', 'Soins infirmiers',
   'Kinésithérapie', 'Dialyse', 'Hospitalisation', 'Pharmacie interne',
+];
+
+const ANALYSES = [
+  'Numération Formule Sanguine (NFS)', 'Glycémie', 'Bilan lipidique', 'Créatinine / Urée',
+  'Transaminases (ALAT/ASAT)', 'Test VIH', 'Paludisme (TDR / Frottis)', 'Hépatites B et C',
+  'Groupe sanguin / Rhésus', 'Protéines totales', 'Albumine sérique', 'CRP (Protéine C-réactive)',
+  'ECBU (Examen Cytobactériologique des Urines)', 'Coproculture', 'Test de grossesse (β-hCG)',
+  'TSH / T3 / T4 (Thyroïde)', 'PSA (Prostate)', 'Hémoglobine glyquée (HbA1c)',
+  'Antibiogramme', 'Radiologie', 'Échographie', 'Électrocardiogramme (ECG)',
 ];
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -71,6 +80,14 @@ const TYPES = [
     color: 'teal',
     isPharmacy: true,
   },
+  {
+    id: 'laboratoire',
+    label: 'Laboratoire d\'analyses',
+    desc: 'Laboratoire de biologie médicale et analyses',
+    icon: <FlaskConical className="w-7 h-7" />,
+    color: 'purple',
+    isPharmacy: false,
+  },
 ];
 
 type Step = 1 | 2 | 3 | 4;
@@ -84,6 +101,7 @@ export default function CabinetNewPage() {
   const [selectedType, setSelectedType] = useState('');
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedAnalyses, setSelectedAnalyses] = useState<string[]>([]);
   const [selectedDays, setSelectedDays] = useState<string[]>(['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']);
 
   const [form, setForm] = useState({
@@ -100,6 +118,7 @@ export default function CabinetNewPage() {
   });
 
   const isPharmacy = ['pharmacie', 'pharmacie_24h'].includes(selectedType);
+  const isLaboratory = selectedType === 'laboratoire';
   const isOpen24h = selectedType === 'pharmacie_24h';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -115,6 +134,9 @@ export default function CabinetNewPage() {
 
   const toggleService = (s: string) =>
     setSelectedServices(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+  const toggleAnalyse = (a: string) =>
+    setSelectedAnalyses(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
 
   const toggleDay = (d: string) =>
     setSelectedDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
@@ -141,9 +163,10 @@ export default function CabinetNewPage() {
           location: form.location,
           address: form.address,
           description: form.description || undefined,
-          specialties: !isPharmacy ? selectedSpecialties : undefined,
-          doctorCount: !isPharmacy ? parseInt(form.doctorCount) : undefined,
-          services: !isPharmacy ? selectedServices : undefined,
+          specialties: (!isPharmacy && !isLaboratory) ? selectedSpecialties : undefined,
+          doctorCount: (!isPharmacy && !isLaboratory) ? parseInt(form.doctorCount) : undefined,
+          services: (!isPharmacy && !isLaboratory) ? selectedServices : undefined,
+          analyses: isLaboratory ? selectedAnalyses : undefined,
           isOpen24h: isOpen24h,
           hasDelivery: isPharmacy ? form.hasDelivery : undefined,
           openTime: !isOpen24h ? form.openTime : undefined,
@@ -166,7 +189,7 @@ export default function CabinetNewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Créer votre Cabinet / Pharmacie</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Créer votre Cabinet / Pharmacie / Laboratoire</h1>
         <p className="text-gray-500 mt-1">Renseignez les informations de votre établissement de santé</p>
       </div>
 
@@ -333,11 +356,38 @@ export default function CabinetNewPage() {
         {step === 3 && (
           <div className="space-y-6">
             <h2 className="text-lg font-bold text-gray-800 mb-2">
-              {isPharmacy ? 'Informations de la pharmacie' : 'Spécialités, services et horaires'}
+              {isPharmacy ? 'Informations de la pharmacie' : isLaboratory ? 'Analyses proposées et horaires' : 'Spécialités, services et horaires'}
             </h2>
 
+            {/* LABORATOIRE */}
+            {isLaboratory && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <span className="flex items-center gap-1.5"><FlaskConical size={14} /> Analyses et examens proposés</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ANALYSES.map(a => {
+                    const sel = selectedAnalyses.includes(a);
+                    return (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => toggleAnalyse(a)}
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition text-left ${
+                          sel ? 'bg-purple-600 text-white font-semibold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <span>{a}</span>
+                        {sel && <Check size={13} className="flex-shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* CABINET / CLINIQUE */}
-            {!isPharmacy && (
+            {!isPharmacy && !isLaboratory && (
               <>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -519,10 +569,16 @@ export default function CabinetNewPage() {
                 <span className="text-gray-500">Adresse</span>
                 <span className="font-semibold text-gray-900 text-right max-w-xs">{form.address}</span>
               </div>
-              {!isPharmacy && selectedSpecialties.length > 0 && (
+              {!isPharmacy && !isLaboratory && selectedSpecialties.length > 0 && (
                 <div className="flex justify-between items-start">
                   <span className="text-gray-500">Spécialités</span>
                   <span className="font-semibold text-gray-900 text-right max-w-xs">{selectedSpecialties.join(', ')}</span>
+                </div>
+              )}
+              {isLaboratory && selectedAnalyses.length > 0 && (
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-500">Analyses</span>
+                  <span className="font-semibold text-gray-900 text-right max-w-xs">{selectedAnalyses.length} analyse(s) sélectionnée(s)</span>
                 </div>
               )}
               {isOpen24h ? (

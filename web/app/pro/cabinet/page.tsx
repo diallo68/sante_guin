@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Building2, MapPin, Phone, Mail, Clock, Users, Package,
   Star, Edit3, CheckCircle, AlertCircle, Calendar, Truck,
-  Stethoscope, ArrowRight, PlusCircle, Settings, BarChart3,
+  Stethoscope, FlaskConical, ArrowRight, PlusCircle, Settings, BarChart3,
 } from 'lucide-react';
 
 interface BusinessProfile {
@@ -20,6 +20,7 @@ interface BusinessProfile {
   specialties?: string[];
   doctorCount?: number;
   services?: string[];
+  analyses?: string[];
   isOpen24h?: boolean;
   hasDelivery?: boolean;
   openTime?: string;
@@ -38,6 +39,7 @@ const TYPE_LABELS: Record<string, string> = {
   centre_sante: 'Centre de santé',
   pharmacie: 'Pharmacie',
   pharmacie_24h: 'Pharmacie 24h/24',
+  laboratoire: 'Laboratoire d\'analyses',
 };
 
 const TYPE_ICONS: Record<string, JSX.Element> = {
@@ -47,6 +49,7 @@ const TYPE_ICONS: Record<string, JSX.Element> = {
   centre_sante: <Building2 className="w-6 h-6" />,
   pharmacie: <Package className="w-6 h-6" />,
   pharmacie_24h: <Package className="w-6 h-6" />,
+  laboratoire: <FlaskConical className="w-6 h-6" />,
 };
 
 export default function CabinetDashboardPage() {
@@ -68,6 +71,7 @@ export default function CabinetDashboardPage() {
   }, []);
 
   const isPharmacy = profile ? ['pharmacie', 'pharmacie_24h'].includes(profile.type) : false;
+  const isLaboratory = profile?.type === 'laboratoire';
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -111,7 +115,7 @@ export default function CabinetDashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Cabinet / Boutique</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Cabinet / Pharmacie / Laboratoire</h1>
           <p className="text-gray-500 mt-1">Gérez votre établissement de santé</p>
         </div>
         <div className="bg-white rounded-xl shadow p-12 text-center">
@@ -120,13 +124,13 @@ export default function CabinetDashboardPage() {
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">Aucun établissement créé</h2>
           <p className="text-gray-500 mb-8 max-w-md mx-auto">
-            Vous n'avez pas encore créé votre cabinet ou pharmacie. Commencez maintenant pour apparaître sur Guinée Santé.
+            Vous n'avez pas encore créé votre cabinet, pharmacie ou laboratoire. Commencez maintenant pour apparaître sur Guinée Santé.
           </p>
           <Link
             href="/pro/cabinet/new"
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-md"
           >
-            <PlusCircle size={20} /> Créer mon Cabinet / Pharmacie
+            <PlusCircle size={20} /> Créer mon Cabinet / Pharmacie / Laboratoire
           </Link>
         </div>
       </div>
@@ -138,7 +142,9 @@ export default function CabinetDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Cabinet / Boutique</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {isPharmacy ? 'Ma Pharmacie' : isLaboratory ? 'Mon Laboratoire' : 'Mon Cabinet'}
+          </h1>
           <p className="text-gray-500 mt-1">Gérez votre établissement de santé</p>
         </div>
         {saveSuccess && (
@@ -244,9 +250,9 @@ export default function CabinetDashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Note moyenne', value: profile.rating > 0 ? `${profile.rating.toFixed(1)}/5` : '—', sub: `${profile.reviewCount} avis`, icon: <Star className="w-5 h-5" />, color: 'yellow' },
-          { label: isPharmacy ? 'Commandes du mois' : 'RDV ce mois', value: '—', sub: 'données à venir', icon: <Calendar className="w-5 h-5" />, color: 'blue' },
-          { label: isPharmacy ? 'Livraisons en cours' : 'En attente', value: '—', sub: 'à traiter', icon: isPharmacy ? <Truck className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />, color: 'orange' },
-          { label: isPharmacy ? 'Produits listés' : 'Médecins', value: isPharmacy ? '—' : profile.doctorCount ?? '—', sub: isPharmacy ? 'dans votre officine' : 'dans votre cabinet', icon: isPharmacy ? <Package className="w-5 h-5" /> : <Users className="w-5 h-5" />, color: 'teal' },
+          { label: isPharmacy ? 'Commandes du mois' : isLaboratory ? 'Analyses proposées' : 'RDV ce mois', value: isLaboratory ? (profile.analyses?.length ?? 0) : '—', sub: isLaboratory ? 'types d\'analyses' : 'données à venir', icon: isLaboratory ? <FlaskConical className="w-5 h-5" /> : <Calendar className="w-5 h-5" />, color: 'blue' },
+          { label: isPharmacy ? 'Livraisons en cours' : isLaboratory ? 'Statut' : 'En attente', value: isLaboratory ? (profile.isActive ? 'Actif' : 'Inactif') : '—', sub: isLaboratory ? 'établissement' : 'à traiter', icon: isPharmacy ? <Truck className="w-5 h-5" /> : isLaboratory ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />, color: isLaboratory ? 'teal' : 'orange' },
+          { label: isPharmacy ? 'Produits listés' : isLaboratory ? 'Vérification' : 'Médecins', value: isPharmacy ? '—' : isLaboratory ? (profile.isVerified ? 'Vérifié' : 'En attente') : profile.doctorCount ?? '—', sub: isPharmacy ? 'dans votre officine' : isLaboratory ? 'statut du profil' : 'dans votre cabinet', icon: isPharmacy ? <Package className="w-5 h-5" /> : isLaboratory ? <CheckCircle className="w-5 h-5" /> : <Users className="w-5 h-5" />, color: isLaboratory ? 'purple' : 'teal' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-xl shadow p-5">
             <div className={`w-9 h-9 bg-${s.color}-100 text-${s.color}-600 rounded-lg flex items-center justify-center mb-3`}>
@@ -319,14 +325,14 @@ export default function CabinetDashboardPage() {
           )}
         </div>
 
-        {/* Spécialités / Services */}
+        {/* Spécialités / Services / Analyses */}
         <div className="bg-white rounded-xl shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
-              {isPharmacy ? <><Package size={16} /> Services</> : <><Stethoscope size={16} /> Spécialités</>}
+              {isPharmacy ? <><Package size={16} /> Services</> : isLaboratory ? <><FlaskConical size={16} /> Analyses</> : <><Stethoscope size={16} /> Spécialités</>}
             </h3>
           </div>
-          {!isPharmacy && (
+          {!isPharmacy && !isLaboratory && (
             <>
               {profile.specialties && profile.specialties.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 mb-3">
@@ -361,6 +367,17 @@ export default function CabinetDashboardPage() {
                 </div>
               )}
             </div>
+          )}
+          {isLaboratory && (
+            <>
+              {profile.analyses && profile.analyses.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.analyses.map(a => (
+                    <span key={a} className="bg-purple-50 text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-purple-100">{a}</span>
+                  ))}
+                </div>
+              ) : <p className="text-sm text-gray-400">Aucune analyse renseignée</p>}
+            </>
           )}
           <Link href="/pro/cabinet/new"
             className="mt-4 flex items-center gap-1 text-xs text-blue-600 hover:underline">

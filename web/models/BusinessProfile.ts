@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IBusinessProfile extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'medecin_independant' | 'cabinet' | 'clinique' | 'centre_sante' | 'pharmacie' | 'pharmacie_24h';
+  type: 'medecin_independant' | 'cabinet' | 'clinique' | 'centre_sante' | 'pharmacie' | 'pharmacie_24h' | 'laboratoire';
   name: string;
   phone: string;
   email?: string;
@@ -16,6 +16,8 @@ export interface IBusinessProfile extends Document {
   // Pharmacie
   isOpen24h?: boolean;
   hasDelivery?: boolean;
+  // Laboratoire
+  analyses?: string[];
   // Horaires
   openTime?: string;
   closeTime?: string;
@@ -36,7 +38,7 @@ const BusinessProfileSchema = new Schema<IBusinessProfile>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     type: {
       type: String,
-      enum: ['medecin_independant', 'cabinet', 'clinique', 'centre_sante', 'pharmacie', 'pharmacie_24h'],
+      enum: ['medecin_independant', 'cabinet', 'clinique', 'centre_sante', 'pharmacie', 'pharmacie_24h', 'laboratoire'],
       required: true,
     },
     name: { type: String, required: true, trim: true },
@@ -50,6 +52,7 @@ const BusinessProfileSchema = new Schema<IBusinessProfile>(
     services: [{ type: String }],
     isOpen24h: { type: Boolean, default: false },
     hasDelivery: { type: Boolean, default: false },
+    analyses: [{ type: String }],
     openTime: { type: String },
     closeTime: { type: String },
     openDays: [{ type: String }],
