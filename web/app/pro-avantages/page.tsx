@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Calendar, FileText, BarChart3, MessageSquare,
@@ -97,12 +97,29 @@ export default function ProAvantagesPage() {
   const [form, setForm] = useState({ nom: '', telephone: '', email: '', localisation: '', message: '' });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ nom: string; telephone: string; email: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.user) {
+          const { firstName, lastName, phone, email } = data.user;
+          setUserInfo({
+            nom: [firstName, lastName].filter(Boolean).join(' '),
+            telephone: phone || '',
+            email: email || '',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const openModal = (planName: string) => {
     setForm({
-      nom: '',
-      telephone: '',
-      email: '',
+      nom: userInfo?.nom || '',
+      telephone: userInfo?.telephone || '',
+      email: userInfo?.email || '',
       localisation: '',
       message: `Bonjour, je suis intéressé(e) par l'offre ${planName} de Mondocteur Pro. Je souhaite obtenir plus d'informations et procéder à la souscription.`,
     });
