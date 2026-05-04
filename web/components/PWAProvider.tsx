@@ -64,8 +64,9 @@ export default function PWAProvider() {
     // ── Prompt d'installation ──
     const handleInstallPrompt = (e: Event) => {
       e.preventDefault();
+      (window as any).__pwaInstallPrompt = e; // accessible par InstallAppButton
       setInstallPrompt(e as BeforeInstallPromptEvent);
-      // Afficher le banner seulement pour les abonnés Pro non encore dismissé
+      // Banner Pro uniquement
       const dismissed = localStorage.getItem('pwa-install-dismissed');
       if (!dismissed && isPro) setShowInstallBanner(true);
     };

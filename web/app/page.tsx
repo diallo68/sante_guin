@@ -5,6 +5,7 @@ import {
   Shield, Zap, Users, Phone, ChevronRight, Package, FlaskConical,
   BrainCircuit, ImageIcon, Microscope, Pill,
 } from 'lucide-react';
+import InstallAppButton from '@/components/InstallAppButton';
 
 const proSubscribers = [
   { id: '1', name: 'Dr. Ahmed Diallo', type: 'doctor', specialty: 'Cardiologue', address: 'Kaloum, Conakry', rating: 4.8, reviews: 124, hours: '08:00 - 18:00', href: '/doctors' },
@@ -88,6 +89,11 @@ export default async function Home() {
                   {s}
                 </Link>
               ))}
+            </div>
+
+            {/* Bouton installation PWA */}
+            <div className="mt-8">
+              <InstallAppButton />
             </div>
           </div>
         </div>
