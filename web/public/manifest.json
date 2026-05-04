@@ -1,0 +1,43 @@
+{
+  "name": "Mondocteur",
+  "short_name": "Mondocteur",
+  "description": "Plateforme de santé numérique — médecins, pharmacies et laboratoires en Guinée",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health"],
+  "lang": "fr",
+  "shortcuts": [
+    {
+      "name": "Mes Patients",
+      "url": "/pro/patients",
+      "description": "Accéder à la liste des patients"
+    },
+    {
+      "name": "Rendez-vous",
+      "url": "/pro/appointments",
+      "description": "Gérer les rendez-vous"
+    },
+    {
+      "name": "Ham — IA",
+      "url": "/pro/ai",
+      "description": "Assistant IA médical"
+    }
+  ]
+}
