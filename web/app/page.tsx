@@ -213,31 +213,98 @@ export default async function Home() {
       </section>
 
       {/* ── INSTALLATION PWA — Professionnels Pro ── */}
-      <section className="py-12 bg-gradient-to-r from-teal-700 to-teal-900">
+      <section className="py-14 bg-gradient-to-br from-teal-800 to-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-white text-center md:text-left">
-              <div className="inline-flex items-center gap-2 bg-white bg-opacity-15 text-teal-100 text-xs font-bold px-3 py-1.5 rounded-full mb-4 uppercase tracking-widest">
-                Pour les Professionnels de Santé Pro
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-3">
-                Continuez à travailler sans être connecté
-              </h2>
-              <p className="text-teal-100 text-base leading-relaxed max-w-xl">
-                Les abonnés Mondocteur Pro peuvent télécharger l'application web et l'utiliser directement sur leur PC ou téléphone — même sans connexion internet. Vos données se synchronisent automatiquement dès le retour de la connexion.
-              </p>
-              <div className="flex flex-wrap items-center gap-3 mt-5 justify-center md:justify-start text-sm text-teal-200">
-                {['Fonctionne hors ligne', 'Sync automatique', 'Accès rapide bureau', 'Pas d\'App Store'].map((f, i) => (
-                  <span key={i} className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-teal-300 rounded-full" /> {f}
-                  </span>
-                ))}
-              </div>
+
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-white bg-opacity-10 text-teal-200 text-xs font-bold px-3 py-1.5 rounded-full mb-4 uppercase tracking-widest">
+              Réservé aux abonnés Mondocteur Pro
             </div>
-            <div className="flex-shrink-0">
-              <InstallAppButton />
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Continuez à travailler sans être connecté
+            </h2>
+            <p className="text-teal-200 text-base leading-relaxed max-w-2xl mx-auto">
+              Téléchargez l'application web Mondocteur sur votre PC ou téléphone. Accédez à vos patients, rédigez vos ordonnances et utilisez Ham même sans internet.
+            </p>
+          </div>
+
+          {/* Avantages + Limites */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+
+            {/* Avantages */}
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-8 h-8 bg-green-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <CheckCircle size={18} className="text-green-400" />
+                </div>
+                <h3 className="font-bold text-white text-lg">Avantages</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  { title: 'Accès hors ligne', desc: 'Consultez vos patients et documents sans connexion internet' },
+                  { title: 'Installation sur le bureau', desc: 'L\'app s\'ouvre comme un programme natif, sans navigateur' },
+                  { title: 'Chargement ultra-rapide', desc: 'Les pages sont mises en cache, l\'app démarre instantanément' },
+                  { title: 'Synchronisation automatique', desc: 'Toutes vos données se synchronisent dès le retour de la connexion' },
+                  { title: 'Notifications de rendez-vous', desc: 'Recevez les rappels même quand l\'app est en arrière-plan' },
+                  { title: 'Sans App Store', desc: 'Installez directement depuis votre navigateur Chrome ou Edge' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="w-5 h-5 bg-green-500 bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{item.title}</p>
+                      <p className="text-teal-300 text-xs mt-0.5">{item.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Limites */}
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-8 h-8 bg-orange-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white text-lg">Limites hors ligne</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  { title: 'Ham (IA) indisponible', desc: 'L\'assistant IA nécessite une connexion pour interroger le modèle' },
+                  { title: 'Messagerie en temps réel', desc: 'Les nouveaux messages ne s\'affichent pas sans internet' },
+                  { title: 'Prise de rendez-vous en ligne', desc: 'Les patients ne peuvent pas réserver sans connexion active' },
+                  { title: 'Upload de documents', desc: 'Les photos et fichiers sont mis en attente et envoyés à la reconnexion' },
+                  { title: 'Pages non visitées', desc: 'Seules les pages déjà ouvertes sont disponibles hors ligne' },
+                  { title: 'Mises à jour de données', desc: 'Les nouvelles informations (RDV, patients) ne se chargent pas hors ligne' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="w-5 h-5 bg-orange-500 bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{item.title}</p>
+                      <p className="text-orange-200 text-xs mt-0.5">{item.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
+
+          {/* CTA */}
+          <div className="text-center">
+            <InstallAppButton />
+            <p className="text-teal-400 text-xs mt-3">Compatible Chrome, Edge et Safari sur iOS · Abonnement Pro requis</p>
+          </div>
+
         </div>
       </section>
 
