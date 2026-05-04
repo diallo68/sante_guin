@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IPharmacy extends Document {
   _id: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId;
   name: string;
   phone?: string;
   email?: string;
@@ -24,6 +25,7 @@ export interface IPharmacy extends Document {
 
 const PharmacySchema = new Schema<IPharmacy>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
     name: { type: String, required: true, trim: true },
     phone: { type: String },
     email: { type: String, lowercase: true },

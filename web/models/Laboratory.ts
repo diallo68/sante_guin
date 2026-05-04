@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ILaboratory extends Document {
   _id: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId;
   name: string;
   phone?: string;
   email?: string;
@@ -25,6 +26,7 @@ export interface ILaboratory extends Document {
 
 const LaboratorySchema = new Schema<ILaboratory>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
     name: { type: String, required: true, trim: true },
     phone: { type: String },
     email: { type: String, lowercase: true },

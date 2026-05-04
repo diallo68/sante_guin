@@ -4,6 +4,8 @@ import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Doctor from '@/models/Doctor';
+import Pharmacy from '@/models/Pharmacy';
+import Laboratory from '@/models/Laboratory';
 import { sendOTPEmail } from '@/lib/mailer';
 
 function generateOTP(): string {
@@ -17,7 +19,7 @@ function hashOTP(otp: string): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { firstName, lastName, email, phone, password, role = 'patient', specialties, location } = body;
+    const { firstName, lastName, email, phone, password, role = 'patient', specialties, location, pharmacyName, laboratoryName } = body;
 
     if (!firstName || !lastName || !password) {
       return NextResponse.json(
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
       otpExpiry,
     });
 
-    // Créer le profil Doctor si le rôle est médecin
+    // Créer le profil pro selon le rôle
     if (role === 'doctor') {
       await Doctor.create({
         userId: user._id,
@@ -82,6 +84,24 @@ export async function POST(req: NextRequest) {
         email: email || undefined,
         phone: phone || undefined,
         city: location || 'Conakry',
+      });
+    } else if (role === 'pharmacist') {
+      await Pharmacy.create({
+        userId: user._id,
+        name: pharmacyName || `Pharmacie ${lastName}`,
+        email: email || undefined,
+        phone: phone || undefined,
+        city: location || 'Conakry',
+        address: location || 'Conakry',
+      });
+    } else if (role === 'laboratorist') {
+      await Laboratory.create({
+        userId: user._id,
+        name: laboratoryName || `Laboratoire ${lastName}`,
+        email: email || undefined,
+        phone: phone || undefined,
+        city: location || 'Conakry',
+        address: location || 'Conakry',
       });
     }
 
