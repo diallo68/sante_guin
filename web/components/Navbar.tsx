@@ -149,14 +149,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <Link href="/auth/login" className="text-gray-700 hover:text-gray-900 font-semibold">
+                <Link href="/auth/login" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold transition">
                   Connexion
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition"
-                >
-                  S'inscrire
                 </Link>
               </div>
             )}
@@ -215,11 +209,8 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-semibold">
+                <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="block py-2 text-teal-600 font-semibold">
                   Connexion
-                </Link>
-                <Link href="/auth/signup" onClick={() => setMenuOpen(false)} className="block py-2 text-blue-600 font-semibold">
-                  S'inscrire
                 </Link>
               </>
             )}

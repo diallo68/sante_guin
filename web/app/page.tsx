@@ -420,8 +420,8 @@ export default async function Home() {
               ]},
               { title: 'Professionnels', links: [
                 { label: 'Espace Pro', href: '/pro' },
-                { label: 'Comment ça marche', href: '/auth/signup' },
-                { label: "S'inscrire", href: '/auth/signup' },
+                { label: 'Comment ça marche', href: '/pro' },
+                { label: 'Se connecter', href: '/auth/login' },
               ]},
               { title: 'Aide', links: [
                 { label: 'Contact', href: 'mailto:support@guineesante.gn' },
