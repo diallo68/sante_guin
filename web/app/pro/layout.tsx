@@ -156,7 +156,7 @@ export default function ProLayout({ children }: ProLayoutProps) {
 
           {(denyReason === 'none' || denyReason === 'expired') && (
             <Link
-              href="/pro"
+              href="/pro-avantages"
               className="block w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 px-6 rounded-xl transition-all mb-3"
             >
               🚀 Découvrir l'offre Pro
