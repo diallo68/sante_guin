@@ -1,69 +1,4 @@
-// Mailer — uses Resend API (HTTPS, works on all cloud platforms)
-// Fallback: nodemailer SMTP if RESEND_API_KEY is not set
-
-import nodemailer from 'nodemailer';
-
-async function sendViaResend({
-  to,
-  subject,
-  html,
-  fromName = 'Mondocteur',
-}: {
-  to: string;
-  subject: string;
-  html: string;
-  fromName?: string;
-}) {
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: `${fromName} <${fromEmail}>`,
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error ${res.status}: ${err}`);
-  }
-}
-
-async function sendViaSMTP({
-  to,
-  subject,
-  html,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-}) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
-    requireTLS: true,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: { rejectUnauthorized: false },
-  });
-
-  await transporter.sendMail({
-    from: `"Mondocteur" <${process.env.SMTP_USER}>`,
-    to,
-    subject,
-    html,
-  });
-}
+// Mailer — SendGrid HTTP API (port 443, jamais bloqué par Render)
 
 async function sendEmail({
   to,
@@ -74,12 +9,31 @@ async function sendEmail({
   subject: string;
   html: string;
 }) {
-  if (process.env.RESEND_API_KEY) {
-    await sendViaResend({ to, subject, html });
-  } else if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    await sendViaSMTP({ to, subject, html });
-  } else {
-    console.warn(`[Email skipped — no credentials] To: ${to} | Subject: ${subject}`);
+  const apiKey = process.env.SENDGRID_API_KEY;
+  const from = process.env.SENDGRID_FROM_EMAIL || 'noreply@mondocteur.org';
+
+  if (!apiKey) {
+    console.warn(`[SendGrid skipped — SENDGRID_API_KEY manquant] To: ${to}`);
+    return;
+  }
+
+  const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: from, name: 'Mondocteur' },
+      subject,
+      content: [{ type: 'text/html', value: html }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`SendGrid error ${res.status}: ${err}`);
   }
 }
 
