@@ -400,7 +400,7 @@ export default async function Home() {
                 <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center">
                   <Stethoscope size={20} className="text-white" />
                 </div>
-                <span className="text-xl font-bold">Guinée Santé</span>
+                <span className="text-xl font-bold">Mondocteur</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
                 La plateforme de santé numérique qui connecte les patients aux professionnels de santé en Guinée.
@@ -443,7 +443,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <p>© 2026 Guinée Santé. Tous droits réservés.</p>
+            <p>© 2026 Mondocteur. Tous droits réservés.</p>
             <p className="flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full" />
               Tous les systèmes sont opérationnels

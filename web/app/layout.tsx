@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Guinée Santé - Gestion des Rendez-vous Médicaux',
+  title: 'Mondocteur - Gestion des Rendez-vous Médicaux',
   description: 'Application pour la gestion des rendez-vous médicaux et pharmacies en Guinée',
   icons: { icon: '/favicon.ico' },
 };
