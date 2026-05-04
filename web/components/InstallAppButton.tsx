@@ -71,7 +71,7 @@ export default function InstallAppButton() {
         className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold py-3 px-6 rounded-xl hover:bg-teal-50 transition shadow-sm border border-teal-200"
       >
         <Download size={18} />
-        Installer l'application
+        Installez l'application
       </button>
 
       {/* Modal non-Pro */}

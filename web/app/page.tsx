@@ -212,6 +212,35 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── INSTALLATION PWA — Professionnels Pro ── */}
+      <section className="py-12 bg-gradient-to-r from-teal-700 to-teal-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-white text-center md:text-left">
+              <div className="inline-flex items-center gap-2 bg-white bg-opacity-15 text-teal-100 text-xs font-bold px-3 py-1.5 rounded-full mb-4 uppercase tracking-widest">
+                Pour les Professionnels de Santé Pro
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                Continuez à travailler sans être connecté
+              </h2>
+              <p className="text-teal-100 text-base leading-relaxed max-w-xl">
+                Les abonnés Mondocteur Pro peuvent télécharger l'application web et l'utiliser directement sur leur PC ou téléphone — même sans connexion internet. Vos données se synchronisent automatiquement dès le retour de la connexion.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-5 justify-center md:justify-start text-sm text-teal-200">
+                {['Fonctionne hors ligne', 'Sync automatique', 'Accès rapide bureau', 'Pas d\'App Store'].map((f, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-teal-300 rounded-full" /> {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              <InstallAppButton />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PRO + PARTENAIRES + COMMENT ÇA MARCHE — bloc unifié ── */}
       <section id="pro" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
