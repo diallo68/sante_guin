@@ -3,6 +3,7 @@ import {
   ArrowRight, Search, Star, MapPin, Clock, CheckCircle,
   Stethoscope, Calendar, FileText, BarChart3, MessageSquare,
   Shield, Zap, Users, Phone, ChevronRight, Package, FlaskConical,
+  BrainCircuit, ImageIcon, Microscope, Pill,
 } from 'lucide-react';
 
 const proSubscribers = [
@@ -108,6 +109,100 @@ export default async function Home() {
               <p className="text-sm text-gray-500 font-medium">{s.label}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── HAM — ASSISTANT IA ── */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-teal-900 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+
+              {/* Gauche — présentation */}
+              <div className="p-10 md:p-14 flex flex-col justify-center">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-14 h-14 bg-teal-500 bg-opacity-20 border border-teal-400 border-opacity-30 rounded-2xl flex items-center justify-center">
+                    <BrainCircuit className="w-7 h-7 text-teal-300" />
+                  </div>
+                  <div>
+                    <span className="text-teal-400 text-xs font-bold uppercase tracking-widest block">Intelligence Artificielle Médicale</span>
+                    <h2 className="text-3xl md:text-4xl font-bold text-white">
+                      Ham <span className="text-teal-400">·</span> Votre Collaborateur
+                    </h2>
+                  </div>
+                </div>
+
+                <p className="text-gray-300 text-lg leading-relaxed mb-8">
+                  Ham est le premier assistant IA médical conçu pour les professionnels de santé en Guinée. Disponible 24h/24, il analyse vos examens, interprète vos ordonnances et vous aide à prendre les meilleures décisions cliniques.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10">
+                  {[
+                    { icon: <Microscope size={16} />, text: 'Interprétation de résultats biologiques' },
+                    { icon: <ImageIcon size={16} />, text: 'Analyse d\'images médicales' },
+                    { icon: <Pill size={16} />, text: 'Interactions médicamenteuses' },
+                    { icon: <FileText size={16} />, text: 'Rédaction d\'ordonnances' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2.5 bg-white bg-opacity-5 rounded-xl px-4 py-3 border border-white border-opacity-10">
+                      <span className="text-teal-400 flex-shrink-0">{item.icon}</span>
+                      <span className="text-gray-300 text-sm">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link href="/pro/ai" className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 px-7 rounded-xl transition shadow-lg">
+                    <BrainCircuit size={18} /> Essayer Ham
+                  </Link>
+                  <Link href="/pro-avantages" className="inline-flex items-center justify-center gap-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-semibold py-3 px-7 rounded-xl transition border border-white border-opacity-20">
+                    En savoir plus <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Droite — interface chat simulée */}
+              <div className="p-8 md:p-10 flex items-center justify-center border-t lg:border-t-0 lg:border-l border-white border-opacity-10">
+                <div className="w-full max-w-sm bg-white bg-opacity-5 rounded-2xl border border-white border-opacity-10 p-5 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-white border-opacity-10 pb-4">
+                    <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
+                      <BrainCircuit size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm">Ham</p>
+                      <p className="text-teal-400 text-xs flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block" /> En ligne</p>
+                    </div>
+                  </div>
+
+                  {/* Message médecin */}
+                  <div className="flex justify-end">
+                    <div className="bg-teal-600 text-white text-sm rounded-2xl rounded-tr-sm px-4 py-3 max-w-xs">
+                      Patient de 34 ans, fièvre 39°C depuis 3 jours, frissons, céphalées. TDR paludisme positif. Quel protocole ?
+                    </div>
+                  </div>
+
+                  {/* Réponse Ham */}
+                  <div className="flex gap-2">
+                    <div className="w-7 h-7 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <BrainCircuit size={13} className="text-white" />
+                    </div>
+                    <div className="bg-white bg-opacity-10 text-gray-200 text-sm rounded-2xl rounded-tl-sm px-4 py-3 max-w-xs leading-relaxed">
+                      <p className="font-semibold text-teal-300 mb-1">Protocole paludisme simple :</p>
+                      <p>• Artéméther-Luméfantrine 80/480 mg — 6 prises sur 3 jours</p>
+                      <p className="mt-1">• Paracétamol 1g toutes les 6h si fièvre {'>'} 38,5°C</p>
+                      <p className="mt-1 text-gray-400 text-xs">⚠️ Confirmer l&apos;absence de signes de gravité</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white border-opacity-10">
+                    <div className="flex items-center gap-2 bg-white bg-opacity-5 rounded-xl px-3 py-2.5 text-gray-400 text-xs">
+                      <span>Posez votre question à Ham…</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
       </section>
 
