@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
-import { signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
 import Doctor from '@/models/Doctor';
+import { sendOTPEmail } from '@/lib/mailer';
+
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function hashOTP(otp: string): string {
+  return crypto.createHash('sha256').update(otp).digest('hex');
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { firstName, lastName, email, phone, password, role = 'patient' } = body;
+    const { firstName, lastName, email, phone, password, role = 'patient', specialties, location } = body;
 
     if (!firstName || !lastName || !password) {
       return NextResponse.json(
@@ -33,7 +42,6 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    // Vérifier si l'email ou téléphone est déjà utilisé
     const query: any[] = [];
     if (email) query.push({ email });
     if (phone) query.push({ phone });
@@ -49,6 +57,9 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     const user = await User.create({
       firstName,
       lastName,
@@ -56,6 +67,9 @@ export async function POST(req: NextRequest) {
       phone: phone || undefined,
       passwordHash,
       role,
+      isVerified: false,
+      otpCode: hashOTP(otp),
+      otpExpiry,
     });
 
     // Créer le profil Doctor si le rôle est médecin
@@ -64,42 +78,30 @@ export async function POST(req: NextRequest) {
         userId: user._id,
         firstName,
         lastName,
-        specialty: 'Médecin généraliste',
+        specialty: specialties?.[0] || 'Médecin généraliste',
         email: email || undefined,
         phone: phone || undefined,
-        city: 'Conakry',
+        city: location || 'Conakry',
       });
     }
 
-    const token = await signToken({
-      userId: user._id.toString(),
-      email: user.email || '',
-      role: user.role,
-    });
+    // Envoyer le code OTP par email
+    if (email) {
+      await sendOTPEmail({ to: email, name: firstName, otp });
+    } else {
+      // SMS non encore configuré — on affiche le code en console
+      console.log(`[SMS skipped] Code OTP pour ${phone} : ${otp}`);
+    }
 
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
-        user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-        },
+        message: 'Code de vérification envoyé',
+        userId: user._id.toString(),
+        contact: email || phone,
+        contactMethod: email ? 'email' : 'phone',
       },
       { status: 201 }
     );
-
-    response.cookies.set(JWT_COOKIE, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
-      path: '/',
-    });
-
-    return response;
   } catch (error: any) {
     console.error('Signup error:', error);
     return NextResponse.json(

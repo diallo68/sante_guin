@@ -26,11 +26,8 @@ export default function ProfileScreen() {
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Non connecté</Text>
         <Text style={{ color: '#6b7280', textAlign: 'center', marginBottom: 28 }}>Connectez-vous pour accéder à votre profil</Text>
         <TouchableOpacity onPress={() => router.push('/(auth)/login')}
-          style={{ backgroundColor: '#0d9488', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40, marginBottom: 12 }}>
+          style={{ backgroundColor: '#0d9488', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40 }}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Se connecter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-          <Text style={{ color: '#0d9488', fontWeight: '600' }}>Créer un compte</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );

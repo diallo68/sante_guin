@@ -10,6 +10,8 @@ export interface IUser extends Document {
   role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
   isVerified: boolean;
   isSuspended: boolean;
+  otpCode?: string;
+  otpExpiry?: Date;
   favorites: {
     doctors: mongoose.Types.ObjectId[];
     pharmacies: mongoose.Types.ObjectId[];
@@ -38,6 +40,8 @@ const UserSchema = new Schema<IUser>(
     },
     isVerified: { type: Boolean, default: false },
     isSuspended: { type: Boolean, default: false },
+    otpCode: { type: String },
+    otpExpiry: { type: Date },
     favorites: {
       doctors: [{ type: Schema.Types.ObjectId, ref: 'Doctor' }],
       pharmacies: [{ type: Schema.Types.ObjectId, ref: 'Pharmacy' }],

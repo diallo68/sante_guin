@@ -10,6 +10,45 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendOTPEmail({
+  to,
+  name,
+  otp,
+}: {
+  to: string;
+  name: string;
+  otp: string;
+}) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[Email skipped] Code OTP pour ${to} : ${otp}`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: `"Guinée Santé" <${process.env.SMTP_USER}>`,
+    to,
+    subject: `Votre code de vérification — Guinée Santé`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;background:#f9fafb;border-radius:16px">
+        <div style="background:#0d9488;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px">
+          <h1 style="color:#fff;margin:0;font-size:22px">Guinée Santé</h1>
+          <p style="color:#99f6e4;margin:6px 0 0">Votre santé, entre de bonnes mains</p>
+        </div>
+        <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${name},</h2>
+        <p style="color:#4b5563;line-height:1.6">
+          Voici votre code de vérification pour finaliser votre inscription :
+        </p>
+        <div style="text-align:center;margin:28px 0">
+          <span style="display:inline-block;background:#f0fdfa;border:2px solid #0d9488;border-radius:12px;padding:16px 32px;font-size:36px;font-weight:900;letter-spacing:12px;color:#0d9488">${otp}</span>
+        </div>
+        <p style="color:#6b7280;font-size:13px">Ce code expire dans <strong>10 minutes</strong>. Ne le partagez avec personne.</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+        <p style="color:#9ca3af;font-size:12px;text-align:center">© 2026 Guinée Santé · Ne pas répondre à cet email</p>
+      </div>
+    `,
+  });
+}
+
 export async function sendAppointmentConfirmation({
   patientEmail,
   patientName,
