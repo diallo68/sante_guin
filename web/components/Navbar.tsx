@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare, ShieldCheck, Search } from 'lucide-react';
 
@@ -62,24 +63,24 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center gap-4 h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🏥</span>
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <Image src="/logo.png" alt="Mondocteur" width={36} height={36} className="object-contain" />
             <span className="text-xl font-bold text-gray-900">Mondocteur</span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
-            {/* Barre de recherche */}
-            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 transition rounded-xl px-3 py-2">
+          <div className="hidden md:flex flex-1 items-center gap-4">
+            {/* Barre de recherche — flex-1 */}
+            <form onSubmit={handleSearch} className="flex flex-1 items-center gap-2 bg-gray-100 hover:bg-gray-200 transition rounded-xl px-3 py-2">
               <Search size={15} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Médecin, spécialité..."
-                className="w-44 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
+                className="flex-1 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
               />
             </form>
 
@@ -92,6 +93,11 @@ export default function Navbar() {
             <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
               Laboratoires
             </Link>
+            {user && (user.role === 'doctor' || user.role === 'pharmacist' || user.role === 'laboratorist') && (
+              <Link href="/pro/cabinet" className="text-teal-700 hover:text-teal-900 font-semibold text-sm whitespace-nowrap">
+                {user.role === 'pharmacist' ? 'Ma Pharmacie' : user.role === 'laboratorist' ? 'Mon Laboratoire' : 'Mon Cabinet'}
+              </Link>
+            )}
 
             {loading ? (
               <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
@@ -210,6 +216,11 @@ export default function Navbar() {
           <Link href="/laboratories" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
             Laboratoires
           </Link>
+          {user && (user.role === 'doctor' || user.role === 'pharmacist' || user.role === 'laboratorist') && (
+            <Link href="/pro/cabinet" onClick={() => setMenuOpen(false)} className="block py-2 text-teal-700 font-semibold">
+              {user.role === 'pharmacist' ? 'Ma Pharmacie' : user.role === 'laboratorist' ? 'Mon Laboratoire' : 'Mon Cabinet'}
+            </Link>
+          )}
           <div className="border-t border-gray-200 pt-3">
             {user ? (
               <>

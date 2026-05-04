@@ -45,21 +45,13 @@ const TYPES = [
     label: 'Médecin Indépendant',
     desc: 'Praticien exerçant en libéral à titre individuel',
     icon: <Stethoscope className="w-7 h-7" />,
-    color: 'violet',
+    color: 'blue',
     isPharmacy: false,
   },
   {
     id: 'cabinet',
     label: 'Cabinet Médical',
     desc: 'Un ou plusieurs médecins en pratique privée',
-    icon: <Stethoscope className="w-7 h-7" />,
-    color: 'blue',
-    isPharmacy: false,
-  },
-  {
-    id: 'clinique',
-    label: 'Clinique / Centre de santé',
-    desc: 'Structure médicale avec plusieurs services',
     icon: <Building2 className="w-7 h-7" />,
     color: 'indigo',
     isPharmacy: false,
@@ -67,17 +59,9 @@ const TYPES = [
   {
     id: 'pharmacie',
     label: 'Pharmacie',
-    desc: 'Officine de pharmacie avec horaires standards',
+    desc: 'Officine de pharmacie avec livraison possible',
     icon: <Package className="w-7 h-7" />,
     color: 'emerald',
-    isPharmacy: true,
-  },
-  {
-    id: 'pharmacie_24h',
-    label: 'Pharmacie 24h/24',
-    desc: 'Pharmacie ouverte en permanence',
-    icon: <Package className="w-7 h-7" />,
-    color: 'teal',
     isPharmacy: true,
   },
   {
@@ -189,7 +173,7 @@ export default function CabinetNewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Créer votre Cabinet / Pharmacie / Laboratoire</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Créer Votre Établissement</h1>
         <p className="text-gray-500 mt-1">Renseignez les informations de votre établissement de santé</p>
       </div>
 

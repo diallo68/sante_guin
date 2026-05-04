@@ -159,13 +159,13 @@ export default function ProAvantagesPage() {
               href="/pro/cabinet/new"
               className="inline-flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg"
             >
-              <PlusCircle size={18} /> Créer votre Cabinet / Pharmacie
+              <PlusCircle size={18} /> Créer Votre Établissement
             </Link>
             <Link
               href="/pro/cabinet"
               className="inline-flex items-center justify-center gap-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white font-bold py-3 px-6 rounded-xl transition border border-white border-opacity-30"
             >
-              <Settings size={18} /> Gérer Votre Cabinet / Boutique
+              <Settings size={18} /> Gérer Votre Établissement
             </Link>
           </div>
         </div>

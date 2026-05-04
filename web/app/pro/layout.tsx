@@ -112,12 +112,12 @@ export default function ProLayout({ children }: ProLayoutProps) {
       badge: unread,
     },
     {
-      label: user?.role === 'pharmacist' ? 'Créer ma Pharmacie' : user?.role === 'laboratorist' ? 'Créer mon Laboratoire' : 'Créer mon Cabinet',
+      label: 'Créer Votre Établissement',
       href: '/pro/cabinet/new',
       icon: PlusCircle,
     },
     {
-      label: user?.role === 'pharmacist' ? 'Gérer ma Pharmacie' : user?.role === 'laboratorist' ? 'Gérer mon Laboratoire' : 'Gérer mon Cabinet',
+      label: 'Gérer Votre Établissement',
       href: '/pro/cabinet',
       icon: user?.role === 'pharmacist' ? Package : user?.role === 'laboratorist' ? FlaskConical : Building2,
     },
