@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
 
 interface ProLayoutProps {
   children: ReactNode;
@@ -107,7 +107,12 @@ export default function ProLayout({ children }: ProLayoutProps) {
       badge: unread,
     },
     {
-      label: user?.role === 'pharmacist' ? 'Ma Pharmacie' : user?.role === 'laboratorist' ? 'Mon Laboratoire' : 'Mon Cabinet',
+      label: user?.role === 'pharmacist' ? 'Créer ma Pharmacie' : user?.role === 'laboratorist' ? 'Créer mon Laboratoire' : 'Créer mon Cabinet',
+      href: '/pro/cabinet/new',
+      icon: PlusCircle,
+    },
+    {
+      label: user?.role === 'pharmacist' ? 'Gérer ma Pharmacie' : user?.role === 'laboratorist' ? 'Gérer mon Laboratoire' : 'Gérer mon Cabinet',
       href: '/pro/cabinet',
       icon: user?.role === 'pharmacist' ? Package : user?.role === 'laboratorist' ? FlaskConical : Building2,
     },
