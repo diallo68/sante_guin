@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, Users, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, Users, MessageSquare, Lock, ShieldAlert, BrainCircuit } from 'lucide-react';
 
 interface ProLayoutProps {
   children: ReactNode;
@@ -110,6 +110,11 @@ export default function ProLayout({ children }: ProLayoutProps) {
       href: '/pro/messages',
       icon: MessageSquare,
       badge: unread,
+    },
+    {
+      label: 'Assistant IA',
+      href: '/pro/ai',
+      icon: BrainCircuit,
     },
     {
       label: 'Créer Votre Établissement',
