@@ -3,24 +3,55 @@
 import { ReactNode, useState, useEffect, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
 
 interface ProLayoutProps {
   children: ReactNode;
 }
 
+type AccessState = 'loading' | 'granted' | 'denied';
+type DenyReason  = 'not_authenticated' | 'wrong_role' | 'no_profile' | 'none' | 'expired' | 'suspended' | 'server_error' | '';
+
+const DENY_MESSAGES: Record<DenyReason, { title: string; body: string }> = {
+  not_authenticated: { title: 'Connexion requise',      body: 'Veuillez vous connecter pour accéder à l\'espace professionnel.' },
+  wrong_role:        { title: 'Accès non autorisé',     body: 'Seuls les médecins, pharmacies et laboratoires peuvent accéder à cet espace.' },
+  no_profile:        { title: 'Profil introuvable',     body: 'Votre profil professionnel n\'a pas encore été créé. Contactez l\'administration.' },
+  none:              { title: 'Abonnement requis',      body: 'Vous n\'avez pas encore souscrit à l\'option Pro. Accédez au tableau de bord, rendez-vous, documents et suivi patients en souscrivant.' },
+  expired:           { title: 'Abonnement expiré',      body: 'Votre abonnement Pro a expiré. Renouvelez-le pour accéder à toutes les fonctionnalités.' },
+  suspended:         { title: 'Compte suspendu',        body: 'Votre abonnement a été suspendu. Contactez l\'administration pour plus d\'informations.' },
+  server_error:      { title: 'Erreur serveur',         body: 'Une erreur est survenue lors de la vérification de votre accès. Réessayez.' },
+  '':                { title: 'Accès refusé',           body: 'Vous n\'avez pas accès à cette section.' },
+};
+
 export default function ProLayout({ children }: ProLayoutProps) {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState<{ firstName: string; lastName: string; role: string } | null>(null);
   const [unread, setUnread] = useState(0);
+  const [access, setAccess] = useState<AccessState>('loading');
+  const [denyReason, setDenyReason] = useState<DenyReason>('');
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setUser(data?.user || null))
-      .catch(() => {});
+    // Vérifier l'accès Pro en parallèle
+    Promise.all([
+      fetch('/api/auth/me').then(r => r.ok ? r.json() : null),
+      fetch('/api/pro/access').then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
+    ]).then(([meData, accessData]) => {
+      setUser(meData?.user || null);
+      if (accessData.isPro) {
+        setAccess('granted');
+      } else {
+        setAccess('denied');
+        setDenyReason((accessData.reason as DenyReason) || '');
+        if (accessData.reason === 'not_authenticated') {
+          router.push('/auth/login');
+        }
+      }
+    }).catch(() => {
+      setAccess('denied');
+      setDenyReason('server_error');
+    });
 
     const fetchUnread = () => {
       fetch('/api/conversations/unread')
@@ -83,6 +114,54 @@ export default function ProLayout({ children }: ProLayoutProps) {
   ];
 
   const isActive = (href: string) => pathname === href;
+
+  // ── Chargement ──
+  if (access === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // ── Accès refusé ──
+  if (access === 'denied') {
+    const msg = DENY_MESSAGES[denyReason] ?? DENY_MESSAGES[''];
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            {denyReason === 'not_authenticated' || denyReason === 'wrong_role'
+              ? <ShieldAlert className="w-10 h-10 text-red-500" />
+              : <Lock className="w-10 h-10 text-red-500" />
+            }
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mb-3">{msg.title}</h1>
+          <p className="text-gray-500 mb-8 leading-relaxed">{msg.body}</p>
+
+          {(denyReason === 'none' || denyReason === 'expired') && (
+            <Link
+              href="/pro"
+              className="block w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 px-6 rounded-xl transition-all mb-3"
+            >
+              🚀 Découvrir l'offre Pro
+            </Link>
+          )}
+          {denyReason === 'not_authenticated' && (
+            <Link
+              href="/auth/login"
+              className="block w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 px-6 rounded-xl transition-all mb-3"
+            >
+              Se connecter
+            </Link>
+          )}
+          <Link href="/" className="text-sm text-gray-400 hover:text-gray-600">
+            ← Retour à l'accueil
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
