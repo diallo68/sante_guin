@@ -112,7 +112,7 @@ export default function ProLayout({ children }: ProLayoutProps) {
       badge: unread,
     },
     {
-      label: 'Assistant IA',
+      label: 'Votre Collaborateur',
       href: '/pro/ai',
       icon: BrainCircuit,
     },

@@ -89,7 +89,7 @@ export default function AIAssistantPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <Bot className="text-teal-600" size={26} />
-            Assistant IA Médical
+            Votre Collaborateur Médical
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">Propulsé par Llama 3.1 · Aide à la décision clinique</p>
         </div>
