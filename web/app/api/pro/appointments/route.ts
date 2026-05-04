@@ -20,16 +20,20 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    const patientId = searchParams.get('patientId');
+    const limit = parseInt(searchParams.get('limit') || '0');
 
     const query: Record<string, unknown> = { doctorId: doctor._id };
-    if (status && status !== 'all') {
-      query.status = status;
-    }
+    if (status && status !== 'all') query.status = status;
+    if (patientId) query.patientId = patientId;
 
-    const appointments = await Appointment.find(query)
+    let q = Appointment.find(query)
       .populate('patientId', 'firstName lastName email phone')
-      .sort({ date: -1 })
-      .lean();
+      .sort({ date: -1 });
+
+    if (limit > 0) q = q.limit(limit) as typeof q;
+
+    const appointments = await q.lean();
 
     return NextResponse.json({ appointments });
   } catch (error) {

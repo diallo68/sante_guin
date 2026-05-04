@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, Users, MessageSquare, Lock, ShieldAlert } from 'lucide-react';
 
 interface ProLayoutProps {
   children: ReactNode;
@@ -100,6 +100,11 @@ export default function ProLayout({ children }: ProLayoutProps) {
       href: '/pro/reviews',
       icon: Star,
     },
+    ...(user?.role === 'doctor' ? [{
+      label: 'Nos Patients',
+      href: '/pro/patients',
+      icon: Users,
+    }] : []),
     {
       label: 'Messages',
       href: '/pro/messages',
