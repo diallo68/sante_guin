@@ -71,16 +71,6 @@ export default function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/doctors" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
-              Médecins
-            </Link>
-            <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
-              Pharmacies
-            </Link>
-            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
-              Laboratoires
-            </Link>
-
             {/* Barre de recherche */}
             <form onSubmit={handleSearch} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 transition rounded-xl px-3 py-2">
               <Search size={15} className="text-gray-400 flex-shrink-0" />
@@ -92,6 +82,16 @@ export default function Navbar() {
                 className="w-44 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
               />
             </form>
+
+            <Link href="/doctors" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+              Médecins
+            </Link>
+            <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+              Pharmacies
+            </Link>
+            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+              Laboratoires
+            </Link>
 
             {loading ? (
               <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
