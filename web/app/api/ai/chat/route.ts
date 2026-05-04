@@ -9,7 +9,8 @@ Tes capacités :
 - Aide au diagnostic différentiel (symptômes, examens à prescrire)
 - Informations sur les médicaments (dosages, interactions, contre-indications)
 - Rédaction d'ordonnances et comptes rendus médicaux
-- Interprétation de résultats biologiques
+- Interprétation de résultats biologiques et d'examens
+- Analyse d'ordonnances médicales (images)
 - Protocoles de traitement selon les guidelines internationales adaptées au contexte guinéen
 - Rappel des maladies tropicales fréquentes (paludisme, typhoïde, hépatites, VIH, tuberculose, etc.)
 
@@ -28,7 +29,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Accès réservé aux professionnels de santé' }, { status: 403 });
     }
 
-    const { messages } = await req.json();
+    const body = await req.json();
+    const { messages, image, imagePrompt } = body;
+
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages invalides' }, { status: 400 });
     }
@@ -38,6 +41,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Service IA non configuré' }, { status: 500 });
     }
 
+    let groqMessages;
+
+    if (image) {
+      // Mode vision : image + texte → modèle vision
+      groqMessages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: image },
+            },
+            {
+              type: 'text',
+              text: imagePrompt || 'Analyse et interprète ce document médical. Fournis une interprétation clinique détaillée en français.',
+            },
+          ],
+        },
+      ];
+    } else {
+      // Mode texte : conversation normale
+      groqMessages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...messages.slice(-20),
+      ];
+    }
+
+    const model = image ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
+
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
@@ -45,13 +78,10 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...messages.slice(-20), // garder les 20 derniers messages max
-        ],
+        model,
+        messages: groqMessages,
         temperature: 0.3,
-        max_tokens: 1024,
+        max_tokens: 1500,
       }),
     });
 
