@@ -75,34 +75,8 @@ export default async function Home() {
               Trouvez le bon médecin, prenez rendez-vous en ligne et gérez votre santé facilement depuis votre téléphone ou ordinateur.
             </p>
 
-            {/* Search Bar */}
-            <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto">
-              <div className="flex-1 flex items-center gap-3 px-4 py-2">
-                <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Médecin, spécialité, pharmacie..."
-                  className="flex-1 outline-none text-gray-800 placeholder-gray-400 bg-transparent"
-                />
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 border-t sm:border-t-0 sm:border-l border-gray-200">
-                <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Conakry..."
-                  className="w-28 outline-none text-gray-800 placeholder-gray-400 bg-transparent"
-                />
-              </div>
-              <Link
-                href="/doctors"
-                className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 flex-shrink-0"
-              >
-                Rechercher <ArrowRight size={18} />
-              </Link>
-            </div>
-
             {/* Quick links */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
               <span className="text-teal-200 text-sm">Populaires :</span>
               {['Généraliste', 'Cardiologue', 'Pédiatre', 'Pharmacie 24h'].map(s => (
                 <Link

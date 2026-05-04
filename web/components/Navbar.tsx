@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare, ShieldCheck, Search } from 'lucide-react';
 
 interface AuthUser {
   id: string;
@@ -20,6 +20,15 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/doctors?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -61,16 +70,28 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/doctors" className="text-gray-600 hover:text-gray-900 font-medium">
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/doctors" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
               Médecins
             </Link>
-            <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium">
+            <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
               Pharmacies
             </Link>
-            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium">
+            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
               Laboratoires
             </Link>
+
+            {/* Barre de recherche */}
+            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 transition rounded-xl px-3 py-2">
+              <Search size={15} className="text-gray-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Médecin, spécialité..."
+                className="w-44 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
+              />
+            </form>
 
             {loading ? (
               <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
@@ -169,6 +190,17 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 px-4 py-4 space-y-3">
+          {/* Recherche mobile */}
+          <form onSubmit={e => { handleSearch(e); setMenuOpen(false); }} className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2.5">
+            <Search size={15} className="text-gray-400 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Médecin, spécialité..."
+              className="flex-1 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
+            />
+          </form>
           <Link href="/doctors" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
             Médecins
           </Link>
