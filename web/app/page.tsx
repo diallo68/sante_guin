@@ -91,10 +91,6 @@ export default async function Home() {
               ))}
             </div>
 
-            {/* Bouton installation PWA */}
-            <div className="mt-8">
-              <InstallAppButton />
-            </div>
           </div>
         </div>
 
