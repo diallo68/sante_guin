@@ -8,12 +8,27 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
+
 export default function PWAProvider() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [showSyncBanner, setShowSyncBanner] = useState(false);
   const [syncQueue, setSyncQueue] = useState<any[]>([]);
+  const [isPro, setIsPro] = useState(false);
+
+  // Vérifier si l'utilisateur est un abonné Pro
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.user && PRO_ROLES.includes(data.user.role)) {
+          setIsPro(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     // ── Enregistrement du Service Worker ──
@@ -50,9 +65,9 @@ export default function PWAProvider() {
     const handleInstallPrompt = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
-      // Afficher le banner seulement si pas déjà installé
+      // Afficher le banner seulement pour les abonnés Pro non encore dismissé
       const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (!dismissed) setShowInstallBanner(true);
+      if (!dismissed && isPro) setShowInstallBanner(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleInstallPrompt);
@@ -92,6 +107,14 @@ export default function PWAProvider() {
 
     setTimeout(() => setShowSyncBanner(false), 3000);
   };
+
+  // Afficher le banner quand isPro est connu et prompt capturé
+  useEffect(() => {
+    if (isPro && installPrompt) {
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (!dismissed) setShowInstallBanner(true);
+    }
+  }, [isPro, installPrompt]);
 
   // Sauvegarder la queue dans localStorage
   useEffect(() => {
