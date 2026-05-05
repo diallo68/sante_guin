@@ -21,6 +21,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [unread, setUnread] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,14 +42,25 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user) return;
-    const fetchUnread = () => {
+
+    const fetchNotifications = () => {
+      // Messages non lus
       fetch('/api/conversations/unread')
         .then(r => r.ok ? r.json() : null)
         .then(data => { if (data) setUnread(data.count); })
         .catch(() => {});
+
+      // Demandes Pro en attente (admin uniquement)
+      if (user.role === 'admin') {
+        fetch('/api/admin/subscription-requests?status=pending')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => { if (data) setPendingRequests(data.requests?.length || 0); })
+          .catch(() => {});
+      }
     };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000); // poll toutes les 30s
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -107,8 +119,15 @@ export default function Navbar() {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
                 >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {user.firstName[0]}{user.lastName[0]}
+                  <div className="relative">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </div>
+                    {(unread + pendingRequests) > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                        {(unread + pendingRequests) > 99 ? '99+' : unread + pendingRequests}
+                      </span>
+                    )}
                   </div>
                   <span className="font-semibold text-gray-900">{user.firstName}</span>
                   <ChevronDown size={16} className="text-gray-500" />
