@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, X, ArrowRight } from 'lucide-react';
+import { Download, X, ArrowRight, Monitor, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 
 export default function InstallAppButton() {
   const [canInstall, setCanInstall] = useState(false);
-  const [isPro, setIsPro] = useState<boolean | null>(null); // null = pas encore chargé
+  const [isPro, setIsPro] = useState<boolean | null>(null);
   const [showProModal, setShowProModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
@@ -63,6 +64,9 @@ export default function InstallAppButton() {
         setInstalled(true);
         setCanInstall(false);
       }
+    } else {
+      // Le navigateur n'a pas encore déclenché le prompt → instructions manuelles
+      setShowManualModal(true);
     }
   };
 
@@ -77,6 +81,51 @@ export default function InstallAppButton() {
         <Download size={18} />
         Installez l'application
       </button>
+
+      {/* Modal instructions manuelles */}
+      {showManualModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowManualModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowManualModal(false)} className="absolute top-4 right-4 text-gray-300 hover:text-gray-500"><X size={18} /></button>
+            <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Download size={26} className="text-teal-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">Installer Mondocteur</h2>
+            <p className="text-gray-500 text-sm text-center mb-5">Suivez les étapes selon votre navigateur :</p>
+
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded-xl p-4">
+                <p className="flex items-center gap-2 font-bold text-blue-800 text-sm mb-2"><Monitor size={15} /> Chrome / Edge (PC)</p>
+                <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
+                  <li>Clique sur l'icône <strong>⊕</strong> ou <strong>⋮</strong> en haut à droite</li>
+                  <li>Sélectionne <strong>"Installer Mondocteur"</strong></li>
+                  <li>Confirme dans la fenêtre qui apparaît</li>
+                </ol>
+              </div>
+              <div className="bg-teal-50 rounded-xl p-4">
+                <p className="flex items-center gap-2 font-bold text-teal-800 text-sm mb-2"><Smartphone size={15} /> Safari (iPhone / iPad)</p>
+                <ol className="text-xs text-teal-700 space-y-1 list-decimal list-inside">
+                  <li>Appuie sur le bouton <strong>Partager</strong> (carré avec flèche)</li>
+                  <li>Fais défiler et sélectionne <strong>"Sur l'écran d'accueil"</strong></li>
+                  <li>Appuie sur <strong>Ajouter</strong></li>
+                </ol>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="flex items-center gap-2 font-bold text-gray-700 text-sm mb-2"><Smartphone size={15} /> Chrome (Android)</p>
+                <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+                  <li>Appuie sur <strong>⋮</strong> en haut à droite</li>
+                  <li>Sélectionne <strong>"Ajouter à l'écran d'accueil"</strong></li>
+                  <li>Confirme en appuyant sur <strong>Ajouter</strong></li>
+                </ol>
+              </div>
+            </div>
+
+            <button onClick={() => setShowManualModal(false)} className="mt-5 w-full py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl transition">
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal non-Pro */}
       {showProModal && (
