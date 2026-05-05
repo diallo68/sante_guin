@@ -39,13 +39,43 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
-  const { id, status, adminNote } = await req.json();
+  const { id, status, adminNote, sendMessageOnly } = await req.json();
   if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
   await connectDB();
 
   const previous = await SubscriptionRequest.findById(id);
   if (!previous) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 });
+
+  // ── Envoyer un message sans décision ──
+  if (sendMessageOnly) {
+    if (adminNote !== undefined) {
+      await SubscriptionRequest.findByIdAndUpdate(id, { adminNote });
+    }
+    if (previous.email && adminNote?.trim()) {
+      const firstName = previous.nom.split(' ')[0];
+      await sendEmail({
+        to: previous.email,
+        subject: `Message de l'équipe Mondocteur — Offre ${previous.planName}`,
+        html: `
+          <div style="font-family:sans-serif;max-width:560px;margin:auto;padding:32px;background:#f9fafb;border-radius:16px">
+            <div style="background:#0d9488;border-radius:12px;padding:20px;text-align:center;margin-bottom:24px">
+              <h1 style="color:#fff;margin:0;font-size:20px">Mondocteur</h1>
+            </div>
+            <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${firstName},</h2>
+            <p style="color:#6b7280;font-size:13px;margin-bottom:8px">Concernant votre demande d'abonnement <strong style="color:#0d9488">Offre ${previous.planName}</strong> :</p>
+            <div style="background:#fff;border-left:4px solid #0d9488;padding:16px;border-radius:0 10px 10px 0;margin-bottom:20px">
+              <p style="color:#374151;font-size:14px;margin:0;line-height:1.7">${adminNote}</p>
+            </div>
+            <p style="color:#6b7280;font-size:13px">Pour toute question : <strong>+224 620 000 000</strong> (Lun–Sam 8h–18h)</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+            <p style="color:#9ca3af;font-size:12px;text-align:center">© 2026 Mondocteur</p>
+          </div>
+        `,
+      });
+    }
+    return NextResponse.json({ success: true });
+  }
 
   const update: any = {};
   if (status) update.status = status;
