@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { Download, X, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
-const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
-
 export default function InstallAppButton() {
   const [canInstall, setCanInstall] = useState(false);
   const [isPro, setIsPro] = useState<boolean | null>(null); // null = pas encore chargé
@@ -34,10 +32,16 @@ export default function InstallAppButton() {
   }, []);
 
   useEffect(() => {
+    // Vérifier via /api/auth/me (admin = accès total) + /api/pro/access (abonnement actif)
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        setIsPro(data?.user && PRO_ROLES.includes(data.user.role));
+      .then(async data => {
+        if (!data?.user) { setIsPro(false); return; }
+        // Admin → accès complet
+        if (data.user.role === 'admin') { setIsPro(true); return; }
+        // Sinon vérifier l'abonnement Pro actif
+        const access = await fetch('/api/pro/access').then(r => r.json()).catch(() => null);
+        setIsPro(access?.isPro === true);
       })
       .catch(() => setIsPro(false));
   }, []);
