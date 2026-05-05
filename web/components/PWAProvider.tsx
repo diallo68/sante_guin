@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Download, WifiOff, RefreshCw, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -10,6 +11,12 @@ interface BeforeInstallPromptEvent extends Event {
 
 const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
 
+// Snapshot de la session stocké en mémoire pour détecter les changements
+function sessionSnapshot(user: any) {
+  if (!user) return null;
+  return JSON.stringify({ role: user.role, isVerified: user.isVerified, isSuspended: user.isSuspended });
+}
+
 export default function PWAProvider() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -17,18 +24,38 @@ export default function PWAProvider() {
   const [showSyncBanner, setShowSyncBanner] = useState(false);
   const [syncQueue, setSyncQueue] = useState<any[]>([]);
   const [isPro, setIsPro] = useState(false);
+  const lastSnapshot = useRef<string | null>(null);
+  const router = useRouter();
 
-  // Vérifier si l'utilisateur est un abonné Pro
+  // ── Vérification initiale + poll global toutes les 30s ──
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.user && PRO_ROLES.includes(data.user.role)) {
-          setIsPro(true);
+    const checkSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) return;
+        const data = await res.json();
+        const user = data?.user;
+
+        // Mise à jour isPro pour le banner d'installation
+        if (user && PRO_ROLES.includes(user.role)) setIsPro(true);
+
+        const snap = sessionSnapshot(user);
+
+        if (lastSnapshot.current === null) {
+          // Premier chargement — on mémorise l'état
+          lastSnapshot.current = snap;
+        } else if (snap !== lastSnapshot.current) {
+          // Changement détecté (rôle, suspension, vérification…) → refresh
+          lastSnapshot.current = snap;
+          router.refresh();
         }
-      })
-      .catch(() => {});
-  }, []);
+      } catch {}
+    };
+
+    checkSession();
+    const interval = setInterval(checkSession, 30000);
+    return () => clearInterval(interval);
+  }, [router]);
 
   useEffect(() => {
     // ── Enregistrement du Service Worker ──
