@@ -136,10 +136,19 @@ export default function ProAvantagesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
-    // Simulate sending (replace with real API call later)
-    await new Promise(r => setTimeout(r, 1200));
-    setSending(false);
-    setSent(true);
+    try {
+      const res = await fetch('/api/pro/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, planName: modal.planName }),
+      });
+      if (!res.ok) throw new Error();
+      setSent(true);
+    } catch {
+      alert('Erreur lors de l\'envoi. Veuillez réessayer.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

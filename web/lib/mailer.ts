@@ -1,6 +1,6 @@
 // Mailer — SendGrid HTTP API (port 443, jamais bloqué par Render)
 
-async function sendEmail({
+export async function sendEmail({
   to,
   subject,
   html,

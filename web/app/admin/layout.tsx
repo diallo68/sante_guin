@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Briefcase, Calendar,
-  LogOut, Menu, X, ShieldCheck, UserCircle,
+  LogOut, Menu, X, ShieldCheck, UserCircle, Bell,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(true);
   const [user, setUser] = useState<{ firstName: string; lastName: string } | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,6 +23,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           router.replace('/auth/login');
         } else {
           setUser(data.user);
+          // Badge demandes en attente
+          fetch('/api/admin/subscription-requests?status=pending')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setPendingCount(d?.requests?.length || 0))
+            .catch(() => {});
         }
       });
   }, [router]);
@@ -35,6 +41,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { label: 'Tableau de bord', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Utilisateurs', href: '/admin/users', icon: Users },
     { label: 'Gestion Pro', href: '/admin/gestion-pro', icon: Briefcase },
+    { label: 'Demandes Pro', href: '/admin/demandes-pro', icon: Bell, badge: pendingCount },
     { label: 'Rendez-vous', href: '/admin/appointments', icon: Calendar },
     { label: 'Mon Profil', href: '/admin/profil', icon: UserCircle },
   ];
@@ -68,7 +75,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon size={18} className="flex-shrink-0" />
-                {open && <span>{item.label}</span>}
+                {open && (
+                  <span className="flex-1 flex items-center justify-between">
+                    {item.label}
+                    {item.badge && item.badge > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                        {item.badge}
+                      </span>
+                    )}
+                  </span>
+                )}
               </Link>
             );
           })}
