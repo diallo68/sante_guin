@@ -3,10 +3,13 @@
   "short_name": "Mondocteur",
   "description": "Plateforme de santé numérique — médecins, pharmacies et laboratoires en Guinée",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#ffffff",
   "theme_color": "#0d9488",
-  "orientation": "portrait-primary",
+  "lang": "fr",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/logo_m.png",
@@ -28,22 +31,30 @@
     }
   ],
   "categories": ["medical", "health"],
-  "lang": "fr",
   "shortcuts": [
     {
       "name": "Mes Patients",
+      "short_name": "Patients",
       "url": "/pro/patients",
-      "description": "Accéder à la liste des patients"
+      "description": "Accéder à la liste des patients",
+      "icons": [{ "src": "/logo_m.png", "sizes": "96x96" }]
     },
     {
       "name": "Rendez-vous",
+      "short_name": "RDV",
       "url": "/pro/appointments",
-      "description": "Gérer les rendez-vous"
+      "description": "Gérer les rendez-vous",
+      "icons": [{ "src": "/logo_m.png", "sizes": "96x96" }]
     },
     {
       "name": "Ham — IA",
+      "short_name": "Ham IA",
       "url": "/pro/ai",
-      "description": "Assistant IA médical"
+      "description": "Assistant IA médical",
+      "icons": [{ "src": "/logo_m.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
