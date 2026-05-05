@@ -87,9 +87,9 @@ export default function InstallAppButton() {
             <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Download size={26} className="text-teal-600" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Option Pro requise</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Abonnement Pro requis</h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
-              Pour installer l'application Mondocteur sur votre appareil et accéder au mode hors ligne, passez à l'option <strong className="text-teal-600">Mondocteur Pro</strong>.
+              Pour accéder à cette fonctionnalité, souscrivez d'abord à l'option <strong className="text-teal-600">Mondocteur Pro</strong>.
             </p>
             <div className="space-y-2">
               <Link
