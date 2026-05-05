@@ -33,25 +33,48 @@ export default function ProLayout({ children }: ProLayoutProps) {
   const router = useRouter();
 
   useEffect(() => {
-    // Vérifier l'accès Pro en parallèle
-    Promise.all([
-      fetch('/api/auth/me').then(r => r.ok ? r.json() : null),
-      fetch('/api/pro/access').then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
-    ]).then(([meData, accessData]) => {
-      setUser(meData?.user || null);
-      if (accessData.isPro) {
-        setAccess('granted');
-      } else {
-        setAccess('denied');
-        setDenyReason((accessData.reason as DenyReason) || '');
-        if (accessData.reason === 'not_authenticated') {
-          router.push('/auth/login');
+    const checkAccess = () =>
+      Promise.all([
+        fetch('/api/auth/me').then(r => r.ok ? r.json() : null),
+        fetch('/api/pro/access').then(r => r.json().then(d => ({ ok: r.ok, ...d }))),
+      ]).then(([meData, accessData]) => {
+        setUser(meData?.user || null);
+        if (accessData.isPro) {
+          setAccess('granted');
+          return true;
+        } else {
+          setAccess('denied');
+          setDenyReason((accessData.reason as DenyReason) || '');
+          if (accessData.reason === 'not_authenticated') {
+            router.push('/auth/login');
+          }
+          return false;
         }
-      }
-    }).catch(() => {
-      setAccess('denied');
-      setDenyReason('server_error');
-    });
+      }).catch(() => {
+        setAccess('denied');
+        setDenyReason('server_error');
+        return false;
+      });
+
+    // Vérification initiale
+    checkAccess();
+
+    // Poll toutes les 10s quand accès refusé pour détecter l'activation
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      pollInterval = setInterval(async () => {
+        const granted = await checkAccess();
+        if (granted && pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      }, 10000);
+    };
+
+    // On démarre le poll après la vérification initiale si pas encore accordé
+    const initTimer = setTimeout(() => {
+      if (access !== 'granted') startPolling();
+    }, 500);
 
     const fetchUnread = () => {
       fetch('/api/conversations/unread')
@@ -60,8 +83,13 @@ export default function ProLayout({ children }: ProLayoutProps) {
         .catch(() => {});
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    const unreadInterval = setInterval(fetchUnread, 30000);
+
+    return () => {
+      clearTimeout(initTimer);
+      if (pollInterval) clearInterval(pollInterval);
+      clearInterval(unreadInterval);
+    };
   }, []);
 
   const handleLogout = async () => {
