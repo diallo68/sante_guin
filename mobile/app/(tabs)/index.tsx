@@ -253,7 +253,7 @@ export default function HomeScreen() {
               </View>
             </View>
             {/* Right button */}
-            <TouchableOpacity style={{ backgroundColor:C.teal600, borderRadius:20, paddingHorizontal:14, paddingVertical:9, marginLeft:10, flexShrink:0 }}>
+            <TouchableOpacity onPress={() => router.push('/pro-avantages')} style={{ backgroundColor:C.teal600, borderRadius:20, paddingHorizontal:14, paddingVertical:9, marginLeft:10, flexShrink:0 }}>
               <Text style={{ fontSize:12, fontWeight:'700', color:C.white }}>Découvrir →</Text>
             </TouchableOpacity>
           </TouchableOpacity>
