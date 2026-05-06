@@ -298,15 +298,15 @@ export default function HomeScreen() {
           </Text>
           {/* Quick-nav links row */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap:12, marginBottom:20 }}>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/doctors')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
               <Text style={{ fontSize:13, fontWeight:'700', color:C.teal600 }}>Tous les médecins</Text>
               <Ionicons name="arrow-forward" size={13} color={C.teal600} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/pharmacies')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
               <Text style={{ fontSize:13, fontWeight:'700', color:C.teal600 }}>Toutes les pharmacies</Text>
               <Ionicons name="arrow-forward" size={13} color={C.teal600} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/laboratories')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/search')} style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
               <Text style={{ fontSize:13, fontWeight:'700', color:C.teal600 }}>Tous les laboratoires</Text>
               <Ionicons name="arrow-forward" size={13} color={C.teal600} />
             </TouchableOpacity>

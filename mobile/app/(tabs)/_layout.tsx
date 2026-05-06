@@ -65,24 +65,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="doctors"
+        name="search"
         options={{
-          title: 'Médecins',
-          tabBarIcon: ({ color, size }) => <Ionicons name="medkit" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="pharmacies"
-        options={{
-          title: 'Pharmacies',
-          tabBarIcon: ({ color, size }) => <Ionicons name="storefront" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="laboratories"
-        options={{
-          title: 'Laboratoires',
-          tabBarIcon: ({ color, size }) => <Ionicons name="flask" size={size} color={color} />,
+          title: 'Recherche',
+          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -106,6 +92,9 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen name="doctors" options={{ href: null }} />
+      <Tabs.Screen name="pharmacies" options={{ href: null }} />
+      <Tabs.Screen name="laboratories" options={{ href: null }} />
     </Tabs>
   );
 }
