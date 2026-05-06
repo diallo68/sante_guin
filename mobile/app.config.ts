@@ -1,11 +1,11 @@
 import type { ExpoConfig } from "expo/config";
 
-const bundleId = "space.manus.guinee.sante.mobile";
-const schemeFromBundleId = "manusguinee";
+const bundleId = "org.mondocteur.mobile";
+const schemeFromBundleId = "mondocteur";
 
 const env = {
-  appName: "Guinee Sante",
-  appSlug: "guinee-sante-mobile",
+  appName: "MonDocteur",
+  appSlug: "mondocteur-mobile",
   logoUrl: "",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
@@ -32,7 +32,6 @@ const config: ExpoConfig = {
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
     permissions: ["POST_NOTIFICATIONS"],
@@ -52,6 +51,11 @@ const config: ExpoConfig = {
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
+  },
+  extra: {
+    eas: {
+      projectId: "032dab67-c25e-4917-852f-5f0edf973496",
+    },
   },
 };
 

@@ -1,0 +1,19 @@
+{
+  "repoRoot": "/Users/mohamedbenhussein/sante_guin",
+  "cwd": "/Users/mohamedbenhussein/sante_guin/mobile",
+  "stack": {
+    "frameworks": [],
+    "componentLibraries": [],
+    "styling": [],
+    "componentDirectories": [],
+    "packageFiles": [
+      "package.json"
+    ]
+  },
+  "routes": [],
+  "tokens": {
+    "sources": [],
+    "tokens": []
+  },
+  "summary": "Repo root: /Users/mohamedbenhussein/sante_guin\nWorking directory: /Users/mohamedbenhussein/sante_guin/mobile\nFrameworks: none detected\nStyling: none detected\nComponent libraries: none detected\nRoute roots: none detected\nRoute candidates: none detected\nComponent directories: none detected\nToken sources: none detected\nVisible design language hints: no strong hints detected"
+}

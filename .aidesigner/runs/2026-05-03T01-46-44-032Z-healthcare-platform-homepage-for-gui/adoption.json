@@ -1,0 +1,34 @@
+{
+  "id": "2026-05-03T01-46-44-032Z-healthcare-platform-homepage-for-gui",
+  "createdAt": "2026-05-03T01:48:00.781Z",
+  "repoRoot": "/Users/mohamedbenhussein/sante_guin",
+  "prompt": "Healthcare platform homepage for Guinea — Mondocteur. Teal-to-emerald gradient, search bar, bento grid features (patients/doctors/pharmacies), how it works steps, stats bar, pro CTA, footer.",
+  "targetRouteHint": null,
+  "targetFileHint": null,
+  "detectedFrameworks": [],
+  "componentLibraries": [],
+  "stylingSystems": [],
+  "routeCandidates": [],
+  "tokenSources": [],
+  "componentDirectories": [],
+  "htmlStructure": {
+    "title": "Mondocteur | Votre santé, entre de bonnes mains",
+    "primaryHeading": "",
+    "sectionCount": 3,
+    "buttonCount": 3,
+    "formCount": 0,
+    "cardLikeCount": 1,
+    "hasNavigation": true,
+    "hasFooter": true,
+    "hasPricingSignals": false,
+    "hasDashboardSignals": false
+  },
+  "recommendations": [
+    "Break the artifact into section-level components before editing details.",
+    "Use the generated preview as the visual truth source while porting the layout."
+  ],
+  "warnings": [
+    "No frontend framework was detected. Validate the target surface manually before porting.",
+    "No obvious route targets were detected. Choose a target file deliberately before editing."
+  ]
+}

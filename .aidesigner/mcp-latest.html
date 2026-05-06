@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mondocteur | Votre santé, entre de bonnes mains</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['DM Sans', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e',800:'#115e59',900:'#134e4a',950:'#042f2e' },
+                        accent: { 500:'#10B981' }
+                    },
+                    boxShadow: { 'glass':'0 8px 32px 0 rgba(13,148,136,0.15)', 'float':'0 20px 40px -15px rgba(0,0,0,0.05)', 'deep-float':'0 30px 60px -15px rgba(0,0,0,0.1)' },
+                    animation: { 'float-slow':'float 6s ease-in-out infinite', 'reveal-up':'revealUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards', 'pulse-glow':'pulseGlow 2s cubic-bezier(0.4,0,0.6,1) infinite' },
+                    keyframes: { float:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-10px)'}}, revealUp:{'0%':{opacity:'0',transform:'translateY(20px)'},'100%':{opacity:'1',transform:'translateY(0)'}}, pulseGlow:{'0%,100%':{opacity:'1'},'50%':{opacity:'.5'}} }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::selection{background:rgba(20,184,166,0.2);color:#042f2e}
+        html{scrollbar-width:none}
+        body{background-color:#fafafa;overflow-x:hidden}
+        .glass-panel{background:rgba(255,255,255,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.4)}
+        .hero-gradient{background:linear-gradient(135deg,#0d9488 0%,#14b8a6 40%,#10b981 100%);position:relative}
+        .bento-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1.5rem}
+        .reveal-element{opacity:0}
+    </style>
+</head>
+<body class="font-body text-zinc-900">
+    <nav class="fixed w-full z-50 transition-all duration-300 glass-panel border-b border-zinc-200/50" id="main-nav">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2 group">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 group-hover:bg-brand-500 transition-colors">
+                    <i class="ph-fill ph-heartbeat text-2xl"></i>
+                </div>
+                <span class="font-display font-bold text-xl tracking-tight text-zinc-900 group-hover:text-brand-600 transition-colors">Mondocteur</span>
+            </a>
+            <div class="hidden lg:flex items-center gap-8 font-medium text-sm text-zinc-600">
+                <a href="#" class="hover:text-brand-600 transition-colors">Patients</a>
+                <a href="#" class="hover:text-brand-600 transition-colors">Spécialistes</a>
+                <a href="#" class="hover:text-brand-600 transition-colors">Pharmacies</a>
+                <a href="#" class="hover:text-brand-600 transition-colors">À propos</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="#" class="hidden md:flex text-sm font-semibold text-brand-700 hover:text-brand-800 transition-colors">Connexion</a>
+                <a href="#" class="relative overflow-hidden bg-brand-950 text-white text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-zinc-900 transition-all active:scale-95 group">
+                    Espace Pro <i class="ph-bold ph-arrow-right transition-transform group-hover:translate-x-1"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="relative min-h-[100dvh] hero-gradient pt-32 pb-20 md:pb-32 flex flex-col items-center justify-center overflow-hidden">
+        <div class="absolute top-1/4 left-0 w-96 h-96 bg-accent-500/30 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-0 right-10 w-[30rem] h-[30rem] bg-brand-400/20 rounded-full blur-[140px] pointer-events-none"></div>
+        <div class="max-w-[1400px] w-full mx-auto px-4 md:px-8 grid md:grid-cols-12 gap-12 items-center relative z-10">
+            <div class="md:col-span-12 lg:col-span-7 flex flex-col items-start pt-10 lg:pt-0">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-semibold uppercase tracking-wider mb-6 animate-reveal-up opacity-0">
+                    <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse-glow"></span>
+                    Plateforme #1 en Guinée
+                </div>
+                <h1 class="font-display text-5xl sm:text-6xl md:text-7xl font-bold tracking-tighter leading-[1.05] text-white mb-6 animate-reveal-up opacity-0 stagger-1">
+                    Votre santé,<br><span class="text-brand-100">entre de bonnes mains.</span>
+                </h1>
+                <p class="text-lg md:text-xl text-brand-50 mb-10 max-w-xl font-light leading-relaxed animate-reveal-up opacity-0 stagger-2">
+                    Trouvez le bon médecin, réservez votre consultation et localisez vos pharmacies à Conakry et partout en Guinée en quelques clics.
+                </p>
+                <div class="w-full max-w-3xl bg-white p-2 rounded-2xl md:rounded-[2rem] shadow-deep-float flex flex-col md:flex-row gap-2 relative animate-reveal-up opacity-0 stagger-3">
+                    <div class="relative flex-1 group">
+                        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none"><i class="ph-bold ph-magnifying-glass text-zinc-400 group-focus-within:text-brand-600 transition-colors text-xl"></i></div>
+                        <input type="text" placeholder="Spécialité, nom du médecin..." class="w-full pl-12 pr-4 py-4 md:py-5 bg-transparent text-zinc-900 border-none outline-none font-medium placeholder:text-zinc-400 focus:ring-0 rounded-xl hover:bg-zinc-50 transition-colors">
+                    </div>
+                    <div class="hidden md:block w-[1px] bg-zinc-200 my-3"></div>
+                    <div class="relative flex-1 group">
+                        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none"><i class="ph-bold ph-map-pin text-zinc-400 group-focus-within:text-brand-600 transition-colors text-xl"></i></div>
+                        <input type="text" placeholder="Ex: Dixinn, Kaloum, Labé..." class="w-full pl-12 pr-4 py-4 md:py-5 bg-transparent text-zinc-900 border-none outline-none font-medium placeholder:text-zinc-400 focus:ring-0 rounded-xl hover:bg-zinc-50 transition-colors">
+                    </div>
+                    <button class="bg-brand-600 hover:bg-brand-700 text-white px-8 py-4 md:py-5 rounded-xl md:rounded-[1.5rem] font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md shadow-brand-600/20">Rechercher</button>
+                </div>
+                <div class="mt-6 flex items-center gap-4 text-brand-50/80 text-sm animate-reveal-up opacity-0 stagger-4">
+                    <span class="font-medium text-white">Recherches fréquentes:</span>
+                    <a href="#" class="hover:text-white underline decoration-brand-400/50 underline-offset-4">Généraliste</a>
+                    <a href="#" class="hover:text-white underline decoration-brand-400/50 underline-offset-4">Dentiste</a>
+                    <a href="#" class="hover:text-white underline decoration-brand-400/50 underline-offset-4">Pharmacie de garde</a>
+                </div>
+            </div>
+            <div class="hidden md:block lg:col-span-5 relative animate-reveal-up opacity-0 stagger-2">
+                <div class="relative w-full aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-brand-950/30 border border-white/10 -rotate-2 hover:rotate-0 transition-transform duration-700 ease-out">
+                    <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=1000" alt="Médecin professionnel" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-brand-950/80 via-brand-900/20 to-transparent"></div>
+                    <div class="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+                        <div class="w-12 h-12 rounded-full overflow-hidden shrink-0">
+                            <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=150&q=80" alt="Avatar médecin" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-zinc-900">Dr. Aminata Diallo</p>
+                            <p class="text-xs text-zinc-500">Rendez-vous confirmé à 14h30</p>
+                        </div>
+                        <div class="text-right"><p class="text-sm font-bold text-brand-600">09:00</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="relative z-20 w-full max-w-[1240px] mx-auto px-4 -mt-10 sm:-mt-16 reveal-element">
+        <div class="bg-white rounded-2xl md:rounded-[2rem] shadow-float p-6 md:p-10 border border-zinc-100 flex flex-wrap md:flex-nowrap items-center justify-around gap-8 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-zinc-100">
+            <div class="flex flex-col items-center justify-center w-full md:w-auto pt-4 md:pt-0 first:pt-0">
+                <span class="font-display font-bold text-4xl text-zinc-900 mb-1">1,200<span class="text-brand-500">+</span></span>
+                <span class="text-sm font-medium text-zinc-500">Médecins vérifiés</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-full md:w-auto pt-4 md:pt-0">
+                <span class="font-display font-bold text-4xl text-zinc-900 mb-1">450<span class="text-brand-500">+</span></span>
+                <span class="text-sm font-medium text-zinc-500">Pharmacies partenaires</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-full md:w-auto pt-4 md:pt-0">
+                <span class="font-display font-bold text-4xl text-zinc-900 mb-1">50k<span class="text-brand-500">+</span></span>
+                <span class="text-sm font-medium text-zinc-500">Patients satisfaits</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-full md:w-auto pt-4 md:pt-0">
+                <div class="flex text-accent-500 text-xl mb-1"><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star"></i><i class="ph-fill ph-star-half"></i></div>
+                <span class="font-display font-bold text-2xl text-zinc-900 mb-0.5">4.8/5</span>
+                <span class="text-xs font-medium text-zinc-500">Note moyenne</span>
+            </div>
+        </div>
+    </div>
+
+    <section class="py-24 bg-zinc-50/50">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16 reveal-element">
+                <h2 class="font-display text-3xl md:text-5xl font-bold tracking-tight text-zinc-900 mb-4">Le parcours santé, <span class="text-brand-600">simplifié.</span></h2>
+                <p class="text-zinc-500 text-lg">Finies les salles d'attente interminables. Prenez le contrôle de votre parcours médical en 3 étapes simples.</p>
+            </div>
+            <div class="relative max-w-5xl mx-auto reveal-element">
+                <div class="hidden md:block absolute top-[45px] left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-brand-200 via-brand-500 to-accent-500"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 relative z-10">
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="w-24 h-24 rounded-full bg-white border border-zinc-200 shadow-xl flex items-center justify-center mb-6 relative group-hover:-translate-y-2 transition-transform duration-300">
+                            <i class="ph-duotone ph-magnifying-glass text-4xl text-brand-600"></i>
+                            <div class="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center border-4 border-white shadow-sm">1</div>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-zinc-900 mb-2">Recherchez</h3>
+                        <p class="text-zinc-500 text-sm max-w-[250px]">Trouvez le professionnel parfait selon vos critères et lieu.</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="w-24 h-24 rounded-full bg-white border border-zinc-200 shadow-xl flex items-center justify-center mb-6 relative group-hover:-translate-y-2 transition-transform duration-300">
+                            <i class="ph-duotone ph-calendar-check text-4xl text-brand-600"></i>
+                            <div class="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center border-4 border-white shadow-sm">2</div>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-zinc-900 mb-2">Réservez</h3>
+                        <p class="text-zinc-500 text-sm max-w-[250px]">Choisissez un créneau disponible et validez instantanément.</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center group">
+                        <div class="w-24 h-24 rounded-full bg-white border border-zinc-200 shadow-xl flex items-center justify-center mb-6 relative group-hover:-translate-y-2 transition-transform duration-300">
+                            <i class="ph-duotone ph-stethoscope text-4xl text-accent-500"></i>
+                            <div class="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-accent-500 text-white font-bold flex items-center justify-center border-4 border-white shadow-sm">3</div>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-zinc-900 mb-2">Consultez</h3>
+                        <p class="text-zinc-500 text-sm max-w-[250px]">Rendez-vous au cabinet ou téléconsultez. Gardez votre historique.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-white">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="mb-16 reveal-element">
+                <span class="text-brand-600 font-semibold tracking-wide uppercase text-sm mb-3 block">Écosystème Connecté</span>
+                <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight text-zinc-900">Une seule plateforme.<br>Trois expériences sur-mesure.</h2>
+            </div>
+            <div class="bento-grid reveal-element">
+                <div class="col-span-12 lg:col-span-7 bg-brand-50 rounded-[2rem] p-8 md:p-12 relative overflow-hidden group border border-brand-100 flex flex-col justify-between min-h-[400px] hover:shadow-float transition-all duration-500">
+                    <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-200/50 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
+                    <div class="relative z-10 max-w-sm mb-12">
+                        <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6"><i class="ph-duotone ph-user text-2xl text-brand-600"></i></div>
+                        <h3 class="font-display text-3xl font-bold text-zinc-900 mb-3">Pour les Patients</h3>
+                        <p class="text-zinc-600 leading-relaxed">Trouvez rapidement un spécialiste, sécurisez un rendez-vous et localisez la pharmacie de garde la plus proche sans stress.</p>
+                        <ul class="mt-6 space-y-3">
+                            <li class="flex items-center gap-3 text-sm font-medium text-zinc-700"><i class="ph-bold ph-check text-brand-500"></i> Réservation 24/7</li>
+                            <li class="flex items-center gap-3 text-sm font-medium text-zinc-700"><i class="ph-bold ph-check text-brand-500"></i> Rappels automatiques (SMS/Email)</li>
+                            <li class="flex items-center gap-3 text-sm font-medium text-zinc-700"><i class="ph-bold ph-check text-brand-500"></i> Historique médical centralisé</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-span-12 lg:col-span-5 grid grid-rows-2 gap-6">
+                    <div class="bg-white rounded-[2rem] p-8 relative overflow-hidden group border border-zinc-200 shadow-sm hover:shadow-float transition-all duration-500 flex flex-col justify-center">
+                        <div class="w-12 h-12 bg-zinc-50 rounded-xl flex items-center justify-center border border-zinc-100 mb-4"><i class="ph-duotone ph-first-aid text-2xl text-zinc-800"></i></div>
+                        <h3 class="font-display text-2xl font-bold text-zinc-900 mb-2">Pour les Soignants</h3>
+                        <p class="text-zinc-600 text-sm leading-relaxed mb-4">Gérez votre agenda, accédez aux dossiers patients et envoyez des ordonnances numériques.</p>
+                        <a href="#" class="inline-flex items-center gap-2 text-sm font-bold text-brand-600">Espace Médecin <i class="ph-bold ph-arrow-right"></i></a>
+                    </div>
+                    <div class="bg-zinc-950 rounded-[2rem] p-8 relative overflow-hidden group border border-zinc-800 hover:border-accent-500/50 transition-all duration-500 flex flex-col justify-center text-white">
+                        <div class="absolute top-0 right-0 w-48 h-48 bg-accent-500/20 rounded-full blur-[50px]"></div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center border border-zinc-800 mb-4"><i class="ph-duotone ph-pill text-2xl text-accent-400"></i></div>
+                            <h3 class="font-display text-2xl font-bold text-white mb-2">Pour les Pharmacies</h3>
+                            <p class="text-zinc-400 text-sm leading-relaxed mb-4">Augmentez votre visibilité et traitez les ordonnances électroniques facilement.</p>
+                            <a href="#" class="inline-flex items-center gap-2 text-sm font-bold text-accent-400">Espace Pharmacie <i class="ph-bold ph-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 md:py-24 bg-white relative reveal-element">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="bg-brand-950 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 relative overflow-hidden shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-12">
+                <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(#14b8a6 1px,transparent 1px);background-size:24px 24px;pointer-events:none"></div>
+                <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-600/30 rounded-full blur-[100px] pointer-events-none"></div>
+                <div class="relative z-10 max-w-xl">
+                    <h2 class="font-display text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Professionnels de santé, modernisez votre pratique.</h2>
+                    <p class="text-brand-100/80 text-lg mb-8 leading-relaxed">Rejoignez le premier réseau médical digitalisé d'Afrique de l'Ouest. Réduisez les rendez-vous manqués et optimisez votre temps.</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="bg-white text-brand-950 px-6 py-4 rounded-xl font-bold hover:bg-zinc-100 transition-colors">Créer un profil Médecin</button>
+                        <button class="bg-transparent border border-white/20 text-white px-6 py-4 rounded-xl font-bold hover:bg-white/10 transition-colors">Inscrire ma Pharmacie</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-zinc-50 pt-20 pb-10 border-t border-zinc-200">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
+                <div class="lg:col-span-2">
+                    <a href="#" class="flex items-center gap-2 mb-6">
+                        <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white"><i class="ph-fill ph-heartbeat text-xl"></i></div>
+                        <span class="font-display font-bold text-xl tracking-tight text-zinc-900">Mondocteur</span>
+                    </a>
+                    <p class="text-zinc-500 text-sm max-w-sm mb-6 leading-relaxed">L'innovation technologique au service de la santé en Guinée.</p>
+                    <div class="flex items-center gap-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:text-brand-600 hover:border-brand-600 transition-colors shadow-sm"><i class="ph-fill ph-facebook-logo text-lg"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:text-brand-600 hover:border-brand-600 transition-colors shadow-sm"><i class="ph-fill ph-twitter-logo text-lg"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white border border-zinc-200 flex items-center justify-center text-zinc-600 hover:text-brand-600 hover:border-brand-600 transition-colors shadow-sm"><i class="ph-fill ph-instagram-logo text-lg"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-bold text-zinc-900 mb-6 font-display">Patients</h4>
+                    <ul class="space-y-4 text-sm text-zinc-500">
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Trouver un médecin</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Pharmacies de garde</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Comment ça marche</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">FAQ Patients</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-zinc-900 mb-6 font-display">Professionnels</h4>
+                    <ul class="space-y-4 text-sm text-zinc-500">
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Espace Médecin</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Espace Pharmacie</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Tarifs</a></li>
+                        <li><a href="#" class="hover:text-brand-600 transition-colors">Centre d'aide pro</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-zinc-900 mb-6 font-display">Contact</h4>
+                    <ul class="space-y-4 text-sm text-zinc-500 mb-6">
+                        <li class="flex items-center gap-2"><i class="ph-fill ph-map-pin text-brand-500"></i> Kaloum, Conakry, GN</li>
+                        <li class="flex items-center gap-2"><i class="ph-fill ph-phone text-brand-500"></i> +224 620 00 00 00</li>
+                        <li class="flex items-center gap-2"><i class="ph-fill ph-envelope text-brand-500"></i> contact@mondocteur.gn</li>
+                    </ul>
+                    <div class="flex flex-col gap-3">
+                        <a href="#" class="bg-zinc-900 text-white rounded-lg px-4 py-2 flex items-center gap-3 hover:bg-black transition-colors w-max">
+                            <i class="ph-fill ph-apple-logo text-2xl"></i>
+                            <div class="text-left"><p class="text-[10px] leading-none text-zinc-300">Télécharger sur</p><p class="text-sm font-bold leading-tight">App Store</p></div>
+                        </a>
+                        <a href="#" class="bg-zinc-900 text-white rounded-lg px-4 py-2 flex items-center gap-3 hover:bg-black transition-colors w-max">
+                            <i class="ph-fill ph-google-play-logo text-2xl"></i>
+                            <div class="text-left"><p class="text-[10px] leading-none text-zinc-300">DISPONIBLE SUR</p><p class="text-sm font-bold leading-tight">Google Play</p></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-zinc-200 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-400 font-medium tracking-wide">
+                <p>&copy; 2024 Mondocteur Guinée. Tous droits réservés.</p>
+                <div class="flex gap-6">
+                    <a href="#" class="hover:text-zinc-600 transition-colors">Mentions légales</a>
+                    <a href="#" class="hover:text-zinc-600 transition-colors">Confidentialité</a>
+                    <a href="#" class="hover:text-zinc-600 transition-colors">CGU</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nav = document.getElementById('main-nav');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) { nav.classList.add('shadow-sm'); } 
+                else { nav.classList.remove('shadow-sm'); }
+            });
+            const revealElements = document.querySelectorAll('.reveal-element');
+            const revealObserver = new IntersectionObserver(function(entries, observer) {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    entry.target.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                    observer.unobserve(entry.target);
+                });
+            }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+            revealElements.forEach(el => {
+                el.style.transform = 'translateY(20px)';
+                revealObserver.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

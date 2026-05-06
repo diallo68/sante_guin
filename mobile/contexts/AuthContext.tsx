@@ -8,7 +8,7 @@ interface User {
   lastName: string;
   email?: string;
   phone?: string;
-  role: 'patient' | 'doctor' | 'pharmacist' | 'admin';
+  role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
 }
 
 interface AuthContextType {

@@ -35,24 +35,13 @@ export default function ProfileScreen() {
 
   const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 
+  const isPro = user.role === 'doctor' || user.role === 'pharmacist' || user.role === 'laboratorist';
+
   const MENU = [
     { icon: 'calendar-outline', label: 'Mes rendez-vous', onPress: () => router.push('/(tabs)/appointments') },
     { icon: 'medkit-outline', label: 'Trouver un médecin', onPress: () => router.push('/(tabs)/doctors') },
     { icon: 'storefront-outline', label: 'Trouver une pharmacie', onPress: () => router.push('/(tabs)/pharmacies') },
-    ...(user.role === 'doctor' || user.role === 'pharmacist' ? [
-      {
-        icon: 'briefcase-outline',
-        label: 'Espace Professionnel',
-        onPress: () => Alert.alert(
-          'Espace Professionnel',
-          'Gérez vos rendez-vous, votre profil et vos horaires depuis l\'application web.',
-          [
-            { text: 'Annuler', style: 'cancel' },
-            { text: 'Ouvrir le site', onPress: () => Linking.openURL('https://guineesante.gn/pro') },
-          ]
-        ),
-      },
-    ] : []),
+    { icon: 'chatbubbles-outline', label: 'Mes messages', onPress: () => router.push('/(tabs)/messages') },
     {
       icon: 'help-circle-outline',
       label: 'Aide & Support',
@@ -62,10 +51,22 @@ export default function ProfileScreen() {
         [
           { text: 'Annuler', style: 'cancel' },
           { text: 'WhatsApp', onPress: () => Linking.openURL('https://wa.me/224620000000') },
-          { text: 'Email', onPress: () => Linking.openURL('mailto:support@guineesante.gn') },
+          { text: 'Email', onPress: () => Linking.openURL('mailto:support@mondocteur.org') },
         ]
       ),
     },
+  ];
+
+  const PRO_MENU = [
+    { icon: 'grid-outline', label: 'Tableau de bord', onPress: () => router.push('/pro/dashboard' as any) },
+    { icon: 'people-outline', label: 'Mes patients', onPress: () => router.push('/pro/patients' as any) },
+    { icon: 'calendar-outline', label: 'Rendez-vous pro', onPress: () => router.push('/pro/appointments' as any) },
+    { icon: 'time-outline', label: 'Mes horaires', onPress: () => router.push('/pro/schedule' as any) },
+    { icon: 'business-outline', label: 'Mon établissement', onPress: () => router.push('/pro/cabinet' as any) },
+    { icon: 'document-text-outline', label: 'Documents', onPress: () => router.push('/pro/documents' as any) },
+    { icon: 'star-outline', label: 'Mes avis', onPress: () => router.push('/pro/reviews' as any) },
+    { icon: 'sparkles-outline', label: 'HAM — IA médicale', onPress: () => router.push('/pro/ai' as any) },
+    { icon: 'person-outline', label: 'Profil professionnel', onPress: () => router.push('/pro/profile' as any) },
   ];
 
   return (
@@ -96,8 +97,33 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Pro section */}
+        {isPro && (
+          <View style={{ marginTop: -12, marginHorizontal: 16, marginBottom: 12 }}>
+            <View style={{ backgroundColor: '#0f2a2a', borderRadius: 20, padding: 16, marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Ionicons name="briefcase" size={16} color="#99f6e4" />
+                <Text style={{ color: '#99f6e4', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' }}>Espace Professionnel</Text>
+              </View>
+              {PRO_MENU.map((item, i) => (
+                <TouchableOpacity
+                  key={i}
+                  onPress={item.onPress}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: i < PRO_MENU.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.06)' }}
+                >
+                  <View style={{ width: 36, height: 36, backgroundColor: 'rgba(13,148,136,0.2)', borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name={item.icon as any} size={18} color="#99f6e4" />
+                  </View>
+                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#fff' }}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={15} color="rgba(255,255,255,0.3)" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Menu */}
-        <View style={{ marginTop: -12, marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 }}>
+        <View style={{ marginTop: isPro ? 0 : -12, marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 }}>
           {MENU.map((item, i) => (
             <TouchableOpacity
               key={i}
@@ -123,7 +149,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <Text style={{ textAlign: 'center', color: '#d1d5db', fontSize: 12, marginBottom: 24 }}>
-          Guinée Santé v1.0.0
+          MonDocteur v1.0.0
         </Text>
       </ScrollView>
     </SafeAreaView>

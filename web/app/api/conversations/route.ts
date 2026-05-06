@@ -12,33 +12,59 @@ export async function GET(req: NextRequest) {
 
   await connectDB();
 
-  let conversations;
+  let conversations: any[] = [];
 
-  if (authUser.role === 'doctor' || authUser.role === 'pharmacist') {
+  if (authUser.role === 'doctor' || authUser.role === 'pharmacist' || authUser.role === 'laboratorist') {
     const doctor = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
-    if (!doctor) return NextResponse.json({ conversations: [] });
 
-    conversations = await Conversation.find({ doctorId: doctor._id })
-      .populate('patientId', 'firstName lastName')
-      .populate('appointmentId', 'date time reason')
+    // Appointment-based conversations
+    const apptConvs = doctor
+      ? await Conversation.find({ type: 'appointment', doctorId: doctor._id })
+          .populate('patientId', 'firstName lastName')
+          .populate('appointmentId', 'date time reason')
+          .sort({ lastMessageAt: -1 })
+          .lean()
+      : [];
+
+    // Document-sharing conversations
+    const docConvs = await Conversation.find({
+      type: 'document',
+      'participants.userId': authUser.userId,
+    })
       .sort({ lastMessageAt: -1 })
       .lean();
+
+    conversations = [...apptConvs, ...docConvs].sort(
+      (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    );
   } else {
-    conversations = await Conversation.find({ patientId: authUser.userId })
+    // Patient: appointment-based conversations
+    const apptConvs = await Conversation.find({ type: 'appointment', patientId: authUser.userId })
       .populate('doctorId', 'firstName lastName specialty')
       .populate('appointmentId', 'date time reason')
       .sort({ lastMessageAt: -1 })
       .lean();
+
+    // Document-sharing conversations
+    const docConvs = await Conversation.find({
+      type: 'document',
+      'participants.userId': authUser.userId,
+    })
+      .sort({ lastMessageAt: -1 })
+      .lean();
+
+    conversations = [...apptConvs, ...docConvs].sort(
+      (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    );
   }
 
   // Attach unread count per conversation
-  const userId = authUser.userId;
   const withUnread = await Promise.all(
     conversations.map(async (conv) => {
       const unread = await Message.countDocuments({
         conversationId: conv._id,
-        readBy: { $ne: userId },
-        senderId: { $ne: userId },
+        readBy: { $ne: authUser.userId },
+        senderId: { $ne: authUser.userId },
       });
       return { ...conv, unreadCount: unread };
     })
@@ -57,6 +83,7 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   const conversation = await Conversation.create({
+    type: 'appointment',
     doctorId,
     patientId,
     appointmentId,

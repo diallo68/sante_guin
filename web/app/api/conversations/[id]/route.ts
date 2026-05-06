@@ -7,6 +7,20 @@ import Doctor from '@/models/Doctor';
 import User from '@/models/User';
 import { sendEmail, emailNewMessage } from '@/lib/email';
 
+async function checkAccess(conv: any, authUser: { userId: string; role: string }) {
+  if (conv.type === 'document') {
+    return conv.participants.some((p: any) => String(p.userId) === authUser.userId);
+  }
+  // Appointment-based
+  const isPatient = String(conv.patientId?._id ?? conv.patientId) === authUser.userId;
+  if (isPatient) return true;
+  if (authUser.role === 'doctor' || authUser.role === 'pharmacist' || authUser.role === 'laboratorist') {
+    const doc = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
+    return doc ? String(doc._id) === String(conv.doctorId?._id ?? conv.doctorId) : false;
+  }
+  return false;
+}
+
 // GET /api/conversations/[id] — messages + mark as read
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,16 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   if (!conv) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
 
-  // Verify access
-  const isPatient = String(conv.patientId._id) === authUser.userId;
-  let isDoctor = false;
-  if (authUser.role === 'doctor' || authUser.role === 'pharmacist') {
-    const doc = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
-    isDoctor = doc ? String(doc._id) === String(conv.doctorId._id) : false;
-  }
-  if (!isPatient && !isDoctor) {
-    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
-  }
+  const hasAccess = await checkAccess(conv, authUser);
+  if (!hasAccess) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
   const messages = await Message.find({ conversationId: id })
     .sort({ createdAt: 1 })
@@ -47,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json({ conversation: conv, messages });
 }
 
-// POST /api/conversations/[id] — send a message
+// POST /api/conversations/[id] — send a text message
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const authUser = await getAuthUser(req);
@@ -61,18 +67,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const conv = await Conversation.findById(id).lean();
   if (!conv) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
 
-  // Verify access
-  const isPatient = String(conv.patientId) === authUser.userId;
-  let isDoctor = false;
-  if (authUser.role === 'doctor' || authUser.role === 'pharmacist') {
-    const doc = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
-    isDoctor = doc ? String(doc._id) === String(conv.doctorId) : false;
-  }
-  if (!isPatient && !isDoctor) {
-    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
-  }
+  const hasAccess = await checkAccess(conv, authUser);
+  if (!hasAccess) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
-  const senderRole = isDoctor ? 'doctor' : 'patient';
+  const senderRole = authUser.role as 'patient' | 'doctor' | 'pharmacist' | 'laboratorist';
 
   const message = await Message.create({
     conversationId: id,
@@ -82,45 +80,64 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     readBy: [authUser.userId],
   });
 
+  const lastMsg = content.trim().substring(0, 100);
   await Conversation.findByIdAndUpdate(id, {
-    lastMessage: content.trim(),
+    lastMessage: lastMsg,
     lastMessageAt: new Date(),
   });
 
-  // Notification email au destinataire (non-bloquant)
+  // Notification email (non-bloquant)
   Promise.resolve().then(async () => {
     try {
-      const recipientId = isDoctor ? String(conv.patientId) : String(conv.doctorId);
-      const senderName = isDoctor
-        ? `Dr. ${(await Doctor.findOne({ userId: authUser.userId }).select('firstName lastName').lean())?.firstName}`
-        : undefined;
-
-      const recipientUser = await User.findById(isDoctor ? conv.patientId : undefined).select('email firstName lastName').lean();
-      const senderUser = await User.findById(authUser.userId).select('firstName lastName').lean();
-
-      if (isDoctor && recipientUser?.email && senderUser) {
+      if (conv.type === 'appointment') {
+        const isDoctor = authUser.role !== 'patient';
+        const senderUser = await User.findById(authUser.userId).select('firstName lastName').lean();
         const doctorDoc = await Doctor.findOne({ userId: authUser.userId }).select('firstName lastName').lean();
-        const tpl = emailNewMessage({
-          recipientName: `${recipientUser.firstName} ${recipientUser.lastName}`,
-          senderName: doctorDoc ? `Dr. ${doctorDoc.firstName} ${doctorDoc.lastName}` : senderUser.firstName,
-          preview: content.trim(),
-          conversationId: id,
-          role: 'patient',
-        });
-        sendEmail({ to: recipientUser.email, ...tpl }).catch(() => {});
-      } else if (!isDoctor) {
-        // Notify doctor: get doctor's user email
-        const doctorDoc = await Doctor.findById(conv.doctorId).select('userId email').lean();
-        const doctorUser = await User.findById(doctorDoc?.userId).select('email firstName lastName').lean();
-        if (doctorUser?.email && senderUser) {
-          const tpl = emailNewMessage({
-            recipientName: `${doctorUser.firstName} ${doctorUser.lastName}`,
-            senderName: `${senderUser.firstName} ${senderUser.lastName}`,
-            preview: content.trim(),
-            conversationId: id,
-            role: 'doctor',
-          });
-          sendEmail({ to: doctorUser.email, ...tpl }).catch(() => {});
+
+        if (isDoctor) {
+          const recipientUser = await User.findById(conv.patientId).select('email firstName lastName').lean();
+          if (recipientUser?.email && senderUser) {
+            const tpl = emailNewMessage({
+              recipientName: `${recipientUser.firstName} ${recipientUser.lastName}`,
+              senderName: doctorDoc ? `Dr. ${doctorDoc.firstName} ${doctorDoc.lastName}` : senderUser.firstName,
+              preview: content.trim(),
+              conversationId: id,
+              role: 'patient',
+            });
+            sendEmail({ to: recipientUser.email, ...tpl }).catch(() => {});
+          }
+        } else {
+          const doctorRecord = await Doctor.findById(conv.doctorId).select('userId').lean();
+          const doctorUser = await User.findById(doctorRecord?.userId).select('email firstName lastName').lean();
+          if (doctorUser?.email && senderUser) {
+            const tpl = emailNewMessage({
+              recipientName: `${doctorUser.firstName} ${doctorUser.lastName}`,
+              senderName: `${senderUser.firstName} ${senderUser.lastName}`,
+              preview: content.trim(),
+              conversationId: id,
+              role: 'doctor',
+            });
+            sendEmail({ to: doctorUser.email, ...tpl }).catch(() => {});
+          }
+        }
+      } else {
+        // Document conversation: notify other participants
+        const senderUser = await User.findById(authUser.userId).select('firstName lastName').lean();
+        const otherParticipants = conv.participants.filter(
+          (p: any) => String(p.userId) !== authUser.userId
+        );
+        for (const p of otherParticipants) {
+          const recipientUser = await User.findById(p.userId).select('email firstName lastName').lean();
+          if (recipientUser?.email && senderUser) {
+            const tpl = emailNewMessage({
+              recipientName: `${recipientUser.firstName} ${recipientUser.lastName}`,
+              senderName: `${senderUser.firstName} ${senderUser.lastName}`,
+              preview: content.trim(),
+              conversationId: id,
+              role: p.role,
+            });
+            sendEmail({ to: recipientUser.email, ...tpl }).catch(() => {});
+          }
         }
       }
     } catch (_) {}

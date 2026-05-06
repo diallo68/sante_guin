@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0891b2"/>
+    </linearGradient>
+    <linearGradient id="cross" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#ccfbf1;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect width="512" height="512" rx="112" ry="112" fill="white" opacity="0.05"/>
+
+  <!-- Stethoscope head (circle) -->
+  <circle cx="256" cy="176" r="72" fill="none" stroke="url(#cross)" stroke-width="28"/>
+
+  <!-- Stethoscope tube -->
+  <path d="M 184 176 Q 120 176 120 252 Q 120 328 196 328" fill="none" stroke="url(#cross)" stroke-width="28" stroke-linecap="round"/>
+  <path d="M 328 176 Q 392 176 392 252 Q 392 340 296 340" fill="none" stroke="url(#cross)" stroke-width="28" stroke-linecap="round"/>
+
+  <!-- Stethoscope ear piece (bottom circle) -->
+  <circle cx="256" cy="356" r="32" fill="url(#cross)"/>
+  <circle cx="256" cy="356" r="16" fill="url(#bg)"/>
+
+  <!-- Plus / cross in the head -->
+  <rect x="240" y="148" width="32" height="56" rx="8" fill="url(#bg)"/>
+  <rect x="228" y="160" width="56" height="32" rx="8" fill="url(#bg)"/>
+
+  <!-- Small MD letters bottom right -->
+  <text x="360" y="468" font-family="Arial, sans-serif" font-size="52" font-weight="900" fill="white" opacity="0.9" text-anchor="middle">MD</text>
+</svg>

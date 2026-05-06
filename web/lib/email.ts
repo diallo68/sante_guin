@@ -83,11 +83,11 @@ export function emailNewMessage(params: {
   senderName: string;
   preview: string;
   conversationId: string;
-  role: 'patient' | 'doctor';
+  role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist';
 }) {
-  const link = params.role === 'doctor'
-    ? `https://mondocteur.org/pro/messages?conv=${params.conversationId}`
-    : `https://mondocteur.org/messages?conv=${params.conversationId}`;
+  const link = params.role === 'patient'
+    ? `https://mondocteur.org/messages?conv=${params.conversationId}`
+    : `https://mondocteur.org/pro/messages?conv=${params.conversationId}`;
 
   return {
     subject: `Nouveau message de ${params.senderName}`,

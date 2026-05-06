@@ -37,8 +37,8 @@ export default function AuthScreen() {
       <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         {/* Logo */}
         <View style={s.header}>
-          <View style={s.logoWrap}><Text style={s.logoText}>GS</Text></View>
-          <Text style={s.appName}>Guinée Santé</Text>
+          <View style={s.logoWrap}><Text style={s.logoText}>MD</Text></View>
+          <Text style={s.appName}>MonDocteur</Text>
           <Text style={s.appSub}>
             {mode === 'login' ? 'Connectez-vous à votre compte' : 'Créez votre compte'}
           </Text>
@@ -126,7 +126,7 @@ function LoginForm({ onCreateAccount }: { onCreateAccount: () => void }) {
         </View>
       </View>
 
-      <TouchableOpacity onPress={() => router.push('/auth/forgot-password')} style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
+      <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} style={{ alignSelf: 'flex-end', marginBottom: 8 }}>
         <Text style={s.forgotText}>Mot de passe oublié ?</Text>
       </TouchableOpacity>
 

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr" class="antialiased font-sans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Guinée Santé - Mobile Vibe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        teal: { 50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e',800:'#115e59',900:'#134e4a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;overflow:hidden; }
+        .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        .stagger-1{animation:slideUpFade 0.7s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;animation-delay:150ms}
+        .stagger-2{animation:slideUpFade 0.7s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;animation-delay:250ms}
+        .stagger-3{animation:slideUpFade 0.7s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0;animation-delay:350ms}
+        @keyframes slideUpFade{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:translateY(0)}}
+        .search-container{transition:all 0.4s cubic-bezier(0.16,1,0.3,1)}.search-container:focus-within{transform:translateY(-2px);box-shadow:0 20px 40px -10px rgba(13,148,136,0.25),0 0 0 4px rgba(20,184,166,0.15)}
+        .glass-refract{box-shadow:inset 0 1px 0 0 rgba(255,255,255,0.6)}
+    </style>
+</head>
+<body class="text-slate-800">
+    <main id="app-container" class="w-full max-w-[430px] h-[100dvh] sm:h-[900px] bg-slate-50 relative overflow-hidden sm:rounded-[40px] shadow-[0_0_80px_-20px_rgba(13,148,136,0.3)] ring-1 ring-white/10 sm:ring-slate-800 flex flex-col">
+        <div class="h-14 w-full flex justify-between items-center px-7 absolute top-0 z-[100] text-white font-medium text-[15px] pointer-events-none mix-blend-plus-lighter">
+            <span class="tracking-widest">9:41</span>
+            <div class="flex items-center gap-1.5 opacity-90">
+                <i class="ph-fill ph-cell-signal-full text-[15px]"></i>
+                <i class="ph-fill ph-wifi-high text-[15px]"></i>
+                <i class="ph-fill ph-battery-full text-[22px] -mr-1"></i>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar bg-slate-50/50 pb-[100px] relative z-10 w-full" id="scroll-area">
+            <section class="bg-teal-600 pt-16 px-6 pb-24 relative rounded-b-[40px] z-20 shadow-[0_10px_40px_-10px_rgba(13,148,136,0.5)]">
+                <header class="flex justify-between items-center relative z-10 mt-2">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5 text-teal-100/90 font-medium text-[13px] tracking-wide uppercase">
+                            <i class="ph ph-hand-waving text-base"></i>
+                            <span>Bienvenue</span>
+                        </div>
+                        <h1 class="text-white font-bold text-[22px] tracking-tight mt-0.5">Guinée Santé</h1>
+                    </div>
+                    <button class="w-11 h-11 rounded-full bg-[#0ea5e9]/15 text-[#38bdf8] flex items-center justify-center backdrop-blur-md border border-[#0ea5e9]/20">
+                        <i class="ph-fill ph-gear-six text-[22px]"></i>
+                    </button>
+                </header>
+                <div class="mt-9 relative z-10">
+                    <h2 class="text-[38px] leading-[1.05] font-extrabold text-white tracking-[-0.04em]">Votre santé,<br><span class="text-teal-200">entre de bonnes mains.</span></h2>
+                    <p class="text-teal-50/80 mt-4 text-[15px] font-light max-w-[95%] leading-[1.6]">Trouvez le bon médecin et prenez rendez-vous facilement.</p>
+                </div>
+                <div class="mt-8 relative z-10">
+                    <div class="search-container bg-white p-1.5 rounded-[24px] flex items-center shadow-lg border border-white/20">
+                        <div class="pl-4 pr-3 text-slate-400 flex items-center justify-center">
+                            <i class="ph ph-magnifying-glass text-[22px]"></i>
+                        </div>
+                        <input type="text" placeholder="Médecin, spécialité, pharmacie..." class="flex-1 bg-transparent border-none outline-none font-medium text-[15px] text-slate-800 placeholder-slate-400 py-3 w-full truncate">
+                        <button class="bg-teal-600 text-white w-12 h-12 flex items-center justify-center rounded-[18px] shadow-[0_4px_12px_rgba(13,148,136,0.3)] shrink-0">
+                            <i class="ph-bold ph-arrow-right text-[20px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <div class="px-5 -mt-10 relative z-30 stagger-1 w-full">
+                <article class="bg-white rounded-[28px] p-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] border-l-[6px] border-l-teal-500 ring-1 ring-slate-200 relative overflow-hidden">
+                    <div class="absolute -right-12 -top-12 w-40 h-40 bg-teal-100/50 rounded-full blur-3xl"></div>
+                    <div class="relative z-10">
+                        <span class="text-[10px] font-extrabold tracking-[0.15em] text-slate-400 uppercase">Pour les professionnels de santé</span>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <h3 class="text-[20px] font-bold text-slate-900 tracking-tight">Mondocteur Pro</h3>
+                            <div class="w-6 h-6 rounded-full bg-teal-50 flex items-center justify-center">
+                                <i class="ph-fill ph-sparkle text-teal-500 text-[14px]"></i>
+                            </div>
+                        </div>
+                        <p class="text-[14px] text-slate-500 font-medium mt-2 leading-[1.5]">Uniquement pour les pros — bénéficiez d'un assistant IA pour vos diagnostics et conseils.</p>
+                    </div>
+                </article>
+            </div>
+            <section class="mt-9 stagger-2 w-full">
+                <div class="px-6 mb-4"><h3 class="font-bold text-slate-900 text-[20px] tracking-tight">Recherches populaires</h3></div>
+                <div class="flex overflow-x-auto no-scrollbar gap-3.5 px-6 pb-4 items-center">
+                    <button class="flex items-center gap-2.5 pl-2 pr-5 py-2 bg-white rounded-full border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-teal-600"><i class="ph-fill ph-user text-[20px]"></i></div>
+                        <span class="text-[15px] font-semibold text-slate-700">Généraliste</span>
+                    </button>
+                    <button class="flex items-center gap-2.5 pl-2 pr-5 py-2 bg-white rounded-full border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-teal-600"><i class="ph-fill ph-heartbeat text-[22px]"></i></div>
+                        <span class="text-[15px] font-semibold text-slate-700">Cardiologue</span>
+                    </button>
+                    <button class="flex items-center gap-2.5 pl-2 pr-5 py-2 bg-white rounded-full border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-teal-600"><i class="ph-fill ph-baby text-[22px]"></i></div>
+                        <span class="text-[15px] font-semibold text-slate-700">Pédiatre</span>
+                    </button>
+                    <button class="flex items-center gap-2.5 pl-2 pr-5 py-2 bg-white rounded-full border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-teal-600"><i class="ph-fill ph-storefront text-[22px]"></i></div>
+                        <span class="text-[15px] font-semibold text-slate-700 whitespace-nowrap">Pharmacie 24h</span>
+                    </button>
+                </div>
+            </section>
+            <section class="mt-4 px-6 pb-12 stagger-3 w-full">
+                <div class="flex items-center gap-2.5 mb-1.5">
+                    <div class="w-6 h-6 rounded-full bg-teal-50 flex items-center justify-center"><i class="ph-fill ph-seal-check text-teal-600 text-[16px]"></i></div>
+                    <h3 class="font-bold text-[12px] tracking-[0.15em] text-slate-400 uppercase mt-0.5">Partenaires Vérifiés</h3>
+                </div>
+                <p class="text-[15px] text-slate-500 font-medium mb-5 leading-snug">Médecins, cabinets, pharmacies et laboratoires certifiés.</p>
+                <div class="bg-white rounded-[28px] border border-slate-200/80 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.03)] ring-1 ring-slate-100">
+                    <div class="divide-y divide-slate-100/80 flex flex-col w-full">
+                        <a href="#" class="p-5 flex items-center justify-between group hover:bg-slate-50 transition-colors w-full">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i class="ph ph-stethoscope text-[24px]"></i></div>
+                                <span class="font-bold text-[16px] text-slate-800 tracking-tight">Médecins et Cabinets</span>
+                            </div>
+                            <span class="text-teal-600 font-semibold text-[14px]">Tout voir</span>
+                        </a>
+                        <a href="#" class="p-5 flex items-center justify-between group hover:bg-slate-50 transition-colors w-full">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="ph ph-pill text-[24px]"></i></div>
+                                <span class="font-bold text-[16px] text-slate-800 tracking-tight">Pharmacies</span>
+                            </div>
+                            <span class="text-teal-600 font-semibold text-[14px]">Tout voir</span>
+                        </a>
+                        <a href="#" class="p-5 flex items-center justify-between group hover:bg-slate-50 transition-colors w-full">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="ph ph-flask text-[24px]"></i></div>
+                                <span class="font-bold text-[16px] text-slate-800 tracking-tight">Laboratoire d'analyse</span>
+                            </div>
+                            <span class="text-teal-600 font-semibold text-[14px]">Tout voir</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <nav class="absolute bottom-0 w-full bg-white/80 backdrop-blur-[24px] border-t border-white z-50 px-8 flex justify-between items-end pb-8 pt-4 glass-refract">
+            <button class="flex flex-col items-center gap-1.5 text-teal-600 pb-1 w-16"><i class="ph-fill ph-house text-[28px]"></i><span class="text-[11px] font-bold">Accueil</span></button>
+            <button class="flex flex-col items-center gap-1.5 text-slate-400 pb-1 w-16"><i class="ph ph-calendar-blank text-[28px]"></i><span class="text-[11px] font-bold">RDVs</span></button>
+            <button class="flex flex-col items-center gap-1.5 text-slate-400 pb-1 w-16"><i class="ph ph-chat-circle-dots text-[28px]"></i><span class="text-[11px] font-bold">Messages</span></button>
+            <button class="flex flex-col items-center gap-1.5 text-slate-400 pb-1 w-16"><i class="ph ph-user text-[28px]"></i><span class="text-[11px] font-bold">Profil</span></button>
+        </nav>
+    </main>
+</body>
+</html>

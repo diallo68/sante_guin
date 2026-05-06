@@ -1,0 +1,19 @@
+{
+  "id": "2026-05-03T01-58-03-050Z-mondocteur-v2-clean-white-doctolib-s",
+  "createdAt": "2026-05-03T01:58:09.561Z",
+  "prompt": "Mondocteur v2: clean white Doctolib-style, hero light bg + search, Mondocteur Pro dark banner, features grid + pricing plans (Essentiel/Confort/Excellence FG), verified professionals section with doctor rows + Pro badges",
+  "mode": null,
+  "url": null,
+  "viewport": "desktop",
+  "repoRoot": "/Users/mohamedbenhussein/sante_guin",
+  "cwd": "/Users/mohamedbenhussein/sante_guin",
+  "requestPath": "/Users/mohamedbenhussein/sante_guin/.aidesigner/runs/2026-05-03T01-58-03-050Z-mondocteur-v2-clean-white-doctolib-s/request.json",
+  "repoContextPath": "/Users/mohamedbenhussein/sante_guin/.aidesigner/runs/2026-05-03T01-58-03-050Z-mondocteur-v2-clean-white-doctolib-s/repo-context.json",
+  "designHtmlPath": "/Users/mohamedbenhussein/sante_guin/.aidesigner/runs/2026-05-03T01-58-03-050Z-mondocteur-v2-clean-white-doctolib-s/design.html",
+  "previewPath": "/Users/mohamedbenhussein/sante_guin/.aidesigner/runs/2026-05-03T01-58-03-050Z-mondocteur-v2-clean-white-doctolib-s/preview.png",
+  "previewError": null,
+  "parentRunId": null,
+  "usage": null,
+  "transport": "mcp",
+  "remoteRunId": "ba6486c5-b049-4ec9-baf7-b8396a83888a"
+}

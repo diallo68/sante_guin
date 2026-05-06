@@ -45,6 +45,18 @@ const PharmacySchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: true },
 }, { timestamps: true });
 
+const LaboratorySchema = new mongoose.Schema({
+  name: String, phone: String, email: String,
+  city: String, address: String, photo: String,
+  analyses: [String],
+  isOpen24h: { type: Boolean, default: false },
+  openTime: String, closeTime: String,
+  rating: { type: Number, default: 0 },
+  reviewCount: { type: Number, default: 0 },
+  isVerified: { type: Boolean, default: true },
+  isAvailable: { type: Boolean, default: true },
+}, { timestamps: true });
+
 async function seed() {
   await mongoose.connect(MONGODB_URI);
   console.log('✅ Connecté à MongoDB');
@@ -52,11 +64,13 @@ async function seed() {
   const User = mongoose.models.User || mongoose.model('User', UserSchema);
   const Doctor = mongoose.models.Doctor || mongoose.model('Doctor', DoctorSchema);
   const Pharmacy = mongoose.models.Pharmacy || mongoose.model('Pharmacy', PharmacySchema);
+  const Laboratory = mongoose.models.Laboratory || mongoose.model('Laboratory', LaboratorySchema);
 
   // Nettoyer les collections
   await Doctor.deleteMany({});
   await Pharmacy.deleteMany({});
-  console.log('🗑️  Collections doctors et pharmacies nettoyées');
+  await Laboratory.deleteMany({});
+  console.log('🗑️  Collections nettoyées');
 
   // Créer un compte médecin de test
   const passwordHash = await bcrypt.hash('medecin123', 12);
@@ -246,6 +260,61 @@ async function seed() {
 
   await Pharmacy.insertMany(pharmacies);
   console.log(`✅ ${pharmacies.length} pharmacies ajoutées`);
+
+  // ---- Laboratoires ----
+  const laboratories = [
+    {
+      name: 'Labo BioSanté',
+      phone: '+224 623 100 001', email: 'biosante@labo.gn',
+      city: 'Conakry', address: 'Kaloum, Avenue du Commerce',
+      analyses: ['Numération formule sanguine', 'Glycémie', 'Bilan lipidique', 'Sérologie paludisme', 'ECBU', 'Bilan hépatique'],
+      isOpen24h: false, openTime: '07:00', closeTime: '18:00',
+      rating: 4.7, reviewCount: 64, isVerified: true, isAvailable: true,
+    },
+    {
+      name: 'Centre d\'Analyses Moderne',
+      phone: '+224 623 100 002', email: 'cam@labo.gn',
+      city: 'Conakry', address: 'Ratoma Centre',
+      analyses: ['PCR Covid-19', 'Test VIH', 'Sérologie hépatite B/C', 'Bilan rénal', 'Ionogramme', 'Coagulation'],
+      isOpen24h: false, openTime: '07:30', closeTime: '17:30',
+      rating: 4.5, reviewCount: 41, isVerified: true, isAvailable: true,
+    },
+    {
+      name: 'Laboratoire Conakry Med',
+      phone: '+224 623 100 003', email: 'ckrymed@labo.gn',
+      city: 'Conakry', address: 'Dixinn, Quartier Landréah',
+      analyses: ['Parasitologie', 'Bactériologie', 'Mycologie', 'Virologie', 'Biochimie', 'Hématologie'],
+      isOpen24h: false, openTime: '07:00', closeTime: '19:00',
+      rating: 4.8, reviewCount: 87, isVerified: true, isAvailable: true,
+    },
+    {
+      name: 'Labo Santé Guinée',
+      phone: '+224 623 100 004', email: 'sg@labo.gn',
+      city: 'Conakry', address: 'Matam, Rue DI-54',
+      analyses: ['Groupage sanguin', 'Bilan thyroïdien', 'PSA', 'Beta HCG', 'Marqueurs tumoraux'],
+      isOpen24h: false, openTime: '08:00', closeTime: '17:00',
+      rating: 4.4, reviewCount: 33, isVerified: true, isAvailable: true,
+    },
+    {
+      name: 'Labo Donka Analyses',
+      phone: '+224 623 100 005', email: 'donka@labo.gn',
+      city: 'Conakry', address: 'Face CHU Donka, Dixinn',
+      analyses: ['Sérologies infectieuses', 'Biochimie spécialisée', 'Cytologie', 'Anatomopathologie'],
+      isOpen24h: true,
+      rating: 4.6, reviewCount: 112, isVerified: true, isAvailable: true,
+    },
+    {
+      name: 'Laboratoire Kankan',
+      phone: '+224 623 100 006',
+      city: 'Kankan', address: 'Centre-ville, Kankan',
+      analyses: ['Analyses courantes', 'Sérologies', 'Hématologie', 'Biochimie'],
+      isOpen24h: false, openTime: '08:00', closeTime: '17:00',
+      rating: 4.3, reviewCount: 28, isVerified: true, isAvailable: true,
+    },
+  ];
+
+  await Laboratory.insertMany(laboratories);
+  console.log(`✅ ${laboratories.length} laboratoires ajoutés`);
 
   console.log('\n🎉 Seed terminé avec succès !');
   console.log('─────────────────────────────────');
