@@ -177,4 +177,30 @@
 
 ---
 
-*Document généré le 05/05/2026*
+---
+
+### Phase 6 — Application mobile Android & Google Play (06 mai 2026)
+
+| Date | Tâche | Description |
+|------|-------|-------------|
+| 06/05 | **Correction build EAS** | Remplacement des 6 PNG placeholders (70 octets) par de vraies images 1024×1024 générées depuis `logo_m.png`. Suppression de `edgeToEdgeEnabled` dans `app.config.ts` (déprécié Android 16). |
+| 06/05 | **Assets mobile** | Génération de `icon.png`, `adaptive-icon-foreground/background/monochrome.png`, `splash-icon.png`, `favicon.png`. |
+| 06/05 | **Page suppression de compte** | `/delete-account` (web) avec formulaire nom+email → notification admin via SendGrid. Requis par Google Play. |
+| 06/05 | **Publication Google Play** | Création de l'app `org.mondocteur.mobile` sur Play Console. Configuration complète : confidentialité, annonces, classification IARC, sécurité des données, catégorie "Style de vie". |
+| 06/05 | **Test fermé Alpha** | AAB version 4 (1.0.0) publié — disponible dans 177 pays. En attente de 12 testeurs pour démarrer le compteur 14 jours. |
+| 06/05 | **Tab bar — 7 → 5 onglets** | Fusion Médecins/Pharmacies/Laboratoires en un seul onglet "Recherche" avec segment control. Résout le débordement de la tab bar sur Android. |
+| 06/05 | **Safe area — edge-to-edge** | `SafeAreaProvider` ajouté au root layout. `SafeAreaView` remplacé par `react-native-safe-area-context` dans 21 écrans. Gestion correcte des encoches et home indicator Android. |
+| 06/05 | **Page Pro Avantages (mobile)** | Écran `/pro-avantages` avec les 3 offres (Essentiel/Confort/Excellence), grille des fonctionnalités, bouton de souscription par email. Bouton "Découvrir" branché depuis la home. |
+| 06/05 | **APK standard signé** | Build production disponible (89,6 Mo). Installable sur tout Android sans restriction testeur Google Play. |
+
+---
+
+## Build history
+
+| Version | versionCode | Date | Statut | Notes |
+|---------|-------------|------|--------|-------|
+| 1.0.0 | 4 | 06/05/2026 | ✅ Alpha Play Store | Première soumission — test fermé en cours |
+
+---
+
+*Document mis à jour le 06/05/2026*
