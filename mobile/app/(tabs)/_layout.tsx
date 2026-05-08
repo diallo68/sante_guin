@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -41,6 +42,9 @@ function MessageTabIcon({ color, size }: { color: string; size: number }) {
 }
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 56 + insets.bottom;
+
   return (
     <Tabs
       screenOptions={{
@@ -51,8 +55,8 @@ export default function TabsLayout() {
           backgroundColor: '#fff',
           borderTopColor: '#f3f4f6',
           paddingTop: 6,
-          paddingBottom: 6,
-          height: 62,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: tabBarHeight,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
