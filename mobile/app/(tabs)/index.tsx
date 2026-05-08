@@ -179,7 +179,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex:1, backgroundColor:C.teal600 }}>
+    <SafeAreaView edges={['top','left','right']} style={{ flex:1, backgroundColor:C.teal600 }}>
       <StatusBar barStyle="light-content" backgroundColor={C.teal600} />
 
       <ScrollView style={{ flex:1, backgroundColor:C.slate50 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:40 }}>
