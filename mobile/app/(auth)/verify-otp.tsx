@@ -10,10 +10,9 @@ import { saveToken, saveUser } from '@/lib/auth';
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { userId, contact, contactMethod } = useLocalSearchParams<{
+  const { userId, contact } = useLocalSearchParams<{
     userId: string;
     contact: string;
-    contactMethod: 'email' | 'phone';
   }>();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -95,21 +94,17 @@ export default function VerifyOTPScreen() {
           </View>
           <Text style={{ fontSize: 24, fontWeight: '800', color: '#134e4a' }}>Vérification</Text>
           <Text style={{ color: '#6b7280', marginTop: 4, textAlign: 'center' }}>
-            Entrez le code reçu par {contactMethod === 'email' ? 'email' : 'SMS'}
+            Entrez le code reçu par email
           </Text>
         </View>
 
         <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 24, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 }}>
           {/* Contact info */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#f0fdfa', borderRadius: 12, padding: 14, marginBottom: 24 }}>
-            <Ionicons
-              name={contactMethod === 'email' ? 'mail-outline' : 'phone-portrait-outline'}
-              size={22}
-              color="#0d9488"
-            />
+            <Ionicons name="mail-outline" size={22} color="#0d9488" />
             <View>
               <Text style={{ fontSize: 12, color: '#6b7280' }}>
-                Code envoyé {contactMethod === 'email' ? 'à' : 'au'}
+                Code envoyé à
               </Text>
               <Text style={{ fontWeight: '700', color: '#111827' }}>{contact}</Text>
             </View>

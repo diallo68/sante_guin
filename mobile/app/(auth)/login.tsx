@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
 type Mode     = 'login' | 'register';
-type Method   = 'email' | 'phone';
 type UserType = 'patient' | 'doctor';
 type RegStep  = 'form' | 'otp';
 
@@ -59,18 +58,14 @@ export default function AuthScreen() {
 function LoginForm({ onCreateAccount }: { onCreateAccount: () => void }) {
   const { login } = useAuth();
   const router = useRouter();
-  const [loginMode, setLoginMode] = useState<Method>('email');
   const [identifier, setIdentifier] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    const contact = loginMode === 'phone'
-      ? '+224' + phone.replace(/\D/g, '')
-      : identifier.trim();
-    if (!contact || contact === '+224') { Alert.alert('Erreur', 'Entrez votre identifiant'); return; }
+    const contact = identifier.trim();
+    if (!contact) { Alert.alert('Erreur', 'Entrez votre email'); return; }
     if (!password) { Alert.alert('Erreur', 'Entrez votre mot de passe'); return; }
     setLoading(true);
     try {
@@ -83,36 +78,15 @@ function LoginForm({ onCreateAccount }: { onCreateAccount: () => void }) {
 
   return (
     <View style={s.card}>
-      {/* Toggle email / téléphone */}
-      <View style={s.toggle}>
-        {([{ key: 'email', label: '📧 Email' }, { key: 'phone', label: '📱 Téléphone' }] as const).map(m => (
-          <TouchableOpacity key={m.key} onPress={() => setLoginMode(m.key)}
-            style={[s.toggleBtn, loginMode === m.key && s.toggleBtnActive]}>
-            <Text style={[s.toggleLabel, loginMode === m.key && s.toggleLabelActive]}>{m.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={s.field}>
+        <Text style={s.label}>Email</Text>
+        <View style={s.inputRow}>
+          <Text style={s.inputIcon}>📧</Text>
+          <TextInput value={identifier} onChangeText={setIdentifier}
+            placeholder="votre@email.com" placeholderTextColor="#9ca3af"
+            autoCapitalize="none" keyboardType="email-address" style={s.inputInner} />
+        </View>
       </View>
-
-      {loginMode === 'email' ? (
-        <View style={s.field}>
-          <Text style={s.label}>Email</Text>
-          <View style={s.inputRow}>
-            <Text style={s.inputIcon}>📧</Text>
-            <TextInput value={identifier} onChangeText={setIdentifier}
-              placeholder="votre@email.com" placeholderTextColor="#9ca3af"
-              autoCapitalize="none" keyboardType="email-address" style={s.inputInner} />
-          </View>
-        </View>
-      ) : (
-        <View style={s.field}>
-          <Text style={s.label}>Téléphone</Text>
-          <View style={s.phoneRow}>
-            <View style={s.phonePrefix}><Text style={s.phonePrefixText}>🇬🇳 +224</Text></View>
-            <TextInput value={phone} onChangeText={setPhone} placeholder="620 00 00 00"
-              placeholderTextColor="#9ca3af" keyboardType="phone-pad" maxLength={9} style={s.phoneInput} />
-          </View>
-        </View>
-      )}
 
       <View style={s.field}>
         <Text style={s.label}>Mot de passe</Text>
@@ -155,14 +129,12 @@ function LoginForm({ onCreateAccount }: { onCreateAccount: () => void }) {
 // ─────────────────────────────────────────────
 function RegisterForm({ onLogin }: { onLogin: () => void }) {
   const [regStep, setRegStep]   = useState<RegStep>('form');
-  const [method, setMethod]     = useState<Method>('email');
   const [userType, setUserType] = useState<UserType>('patient');
   const [loading, setLoading]   = useState(false);
 
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [email,     setEmail]     = useState('');
-  const [phone,     setPhone]     = useState('');
   const [password,  setPassword]  = useState('');
   const [password2, setPassword2] = useState('');
   const [showPw,    setShowPw]    = useState(false);
@@ -199,8 +171,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
 
   const handleSendCode = async () => {
     if (!firstName.trim()) { Alert.alert('Erreur', 'Le prénom est requis'); return; }
-    if (method === 'email' && !email.trim()) { Alert.alert('Erreur', 'L\'email est requis'); return; }
-    if (method === 'phone' && !phone.trim()) { Alert.alert('Erreur', 'Le numéro est requis'); return; }
+    if (!email.trim()) { Alert.alert('Erreur', 'L\'email est requis'); return; }
     if (userType === 'doctor' && specialties.length === 0) { Alert.alert('Erreur', 'Sélectionnez au moins une spécialité'); return; }
     if (userType === 'doctor' && !location) { Alert.alert('Erreur', 'La localisation est requise'); return; }
     if (!password || password.length < 8) { Alert.alert('Erreur', 'Mot de passe : minimum 8 caractères'); return; }
@@ -210,8 +181,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
     try {
       const res = await api.post('/auth/signup', {
         firstName: firstName.trim(), lastName: lastName.trim(),
-        email:  method === 'email' ? email.trim().toLowerCase() : undefined,
-        phone:  method === 'phone' ? '+224' + phone.replace(/\D/g, '') : undefined,
+        email: email.trim().toLowerCase(),
         password,
         role: userType === 'doctor' ? 'doctor' : 'patient',
         specialties: userType === 'doctor' ? specialties : undefined,
@@ -258,9 +228,9 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
   if (regStep === 'otp') {
     return (
       <View style={[s.card, { alignItems: 'center', gap: 16 }]}>
-        <View style={s.otpIconWrap}><Text style={s.otpIcon}>{method === 'email' ? '📧' : '📱'}</Text></View>
+        <View style={s.otpIconWrap}><Text style={s.otpIcon}>📧</Text></View>
         <Text style={s.otpTitle}>Code de vérification</Text>
-        <Text style={s.otpSub}>Envoyé {method === 'email' ? 'à' : 'au'} {verifyContact}</Text>
+        <Text style={s.otpSub}>Envoyé à {verifyContact}</Text>
 
         <View style={s.otpRow}>
           {otp.map((d, i) => (
@@ -305,16 +275,6 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
         ))}
       </View>
 
-      {/* Toggle Email / Téléphone */}
-      <View style={[s.toggle, { marginBottom: 16 }]}>
-        {([{ key: 'email', label: '📧 Email' }, { key: 'phone', label: '📱 Téléphone' }] as const).map(m => (
-          <TouchableOpacity key={m.key} onPress={() => setMethod(m.key)}
-            style={[s.toggleBtn, method === m.key && s.toggleBtnActive]}>
-            <Text style={[s.toggleLabel, method === m.key && s.toggleLabelActive]}>{m.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {/* Prénom + Nom */}
       <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
         <View style={{ flex: 1 }}>
@@ -329,23 +289,11 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
         </View>
       </View>
 
-      {method === 'email' && (
-        <View style={s.field}>
-          <Text style={s.label}>📧 Email *</Text>
-          <TextInput value={email} onChangeText={setEmail} placeholder="votre@email.com"
-            placeholderTextColor="#9ca3af" keyboardType="email-address" autoCapitalize="none" style={s.input} />
-        </View>
-      )}
-      {method === 'phone' && (
-        <View style={s.field}>
-          <Text style={s.label}>📱 Téléphone *</Text>
-          <View style={s.phoneRow}>
-            <View style={s.phonePrefix}><Text style={s.phonePrefixText}>🇬🇳 +224</Text></View>
-            <TextInput value={phone} onChangeText={setPhone} placeholder="620 00 00 00"
-              placeholderTextColor="#9ca3af" keyboardType="phone-pad" maxLength={9} style={s.phoneInput} />
-          </View>
-        </View>
-      )}
+      <View style={s.field}>
+        <Text style={s.label}>📧 Email *</Text>
+        <TextInput value={email} onChangeText={setEmail} placeholder="votre@email.com"
+          placeholderTextColor="#9ca3af" keyboardType="email-address" autoCapitalize="none" style={s.input} />
+      </View>
 
       {userType === 'doctor' && (
         <>
@@ -406,7 +354,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
         style={[s.btnPrimary, loading && s.btnDisabled]}>
         {loading && <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />}
         <Text style={s.btnPrimaryText}>
-          {loading ? 'Envoi...' : `${method === 'email' ? '📧' : '📱'} Recevoir le code de vérification →`}
+          {loading ? 'Envoi...' : '📧 Recevoir le code de vérification →'}
         </Text>
       </TouchableOpacity>
 

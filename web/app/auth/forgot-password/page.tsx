@@ -2,13 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Phone, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Mail, ArrowLeft } from 'lucide-react';
 
-type Step = 'method' | 'contact' | 'otp' | 'reset' | 'success';
+type Step = 'contact' | 'otp' | 'reset' | 'success';
 
 export default function ForgotPasswordPage() {
-  const [step, setStep] = useState<Step>('method');
-  const [method, setMethod] = useState<'email' | 'phone' | null>(null);
+  const [step, setStep] = useState<Step>('contact');
   const [contact, setContact] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [newPassword, setNewPassword] = useState('');
@@ -16,26 +15,16 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleMethodSelect = (selectedMethod: 'email' | 'phone') => {
-    setMethod(selectedMethod);
-    setStep('contact');
-  };
-
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
     if (!contact.trim()) {
-      newErrors.contact = method === 'email' ? 'L\'email est requis' : 'Le numéro est requis';
-    } else if (method === 'email') {
+      newErrors.contact = 'L\'email est requis';
+    } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(contact)) {
         newErrors.contact = 'Email invalide';
-      }
-    } else {
-      const phoneRegex = /^\+?224\d{8}$/;
-      if (!phoneRegex.test(contact.replace(/\s/g, ''))) {
-        newErrors.contact = 'Numéro invalide';
       }
     }
 
@@ -131,10 +120,8 @@ export default function ForgotPasswordPage() {
         {step !== 'success' && (
           <button
             onClick={() => {
-              if (step === 'method') {
+              if (step === 'contact') {
                 window.location.href = '/auth/login';
-              } else if (step === 'contact') {
-                setStep('method');
               } else if (step === 'otp') {
                 setStep('contact');
               } else if (step === 'reset') {
@@ -158,8 +145,7 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Récupération de Mot de Passe</h1>
           <p className="text-gray-600">
-            {step === 'method' && 'Choisissez votre méthode'}
-            {step === 'contact' && 'Entrez votre ' + (method === 'email' ? 'email' : 'numéro')}
+            {step === 'contact' && 'Entrez votre email'}
             {step === 'otp' && 'Vérifiez votre code'}
             {step === 'reset' && 'Créez un nouveau mot de passe'}
             {step === 'success' && 'Succès !'}
@@ -168,54 +154,19 @@ export default function ForgotPasswordPage() {
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          {/* Step 1: Method Selection */}
-          {step === 'method' && (
-            <div className="space-y-4">
-              <button
-                onClick={() => handleMethodSelect('email')}
-                className="w-full bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-lg p-4 text-left transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <Mail className="w-6 h-6 text-blue-600" />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900">Par Email</h3>
-                    <p className="text-sm text-gray-600">Recevez un code par email</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleMethodSelect('phone')}
-                className="w-full bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg p-4 text-left transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <Phone className="w-6 h-6 text-green-600" />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900">Par SMS</h3>
-                    <p className="text-sm text-gray-600">Recevez un code par SMS</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Step 2: Contact Input */}
+          {/* Step 1: Contact Input */}
           {step === 'contact' && (
             <form onSubmit={handleContactSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  {method === 'email' ? 'Email' : 'Numéro de Téléphone'}
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
                 <input
-                  type={method === 'email' ? 'email' : 'tel'}
+                  type="email"
                   value={contact}
                   onChange={(e) => {
                     setContact(e.target.value);
                     setErrors({});
                   }}
-                  placeholder={method === 'email' ? 'votre@email.com' : '+224 XXX XXX XXX'}
+                  placeholder="votre@email.com"
                   className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
                     errors.contact
                       ? 'border-red-500 focus:border-red-600 bg-red-50'

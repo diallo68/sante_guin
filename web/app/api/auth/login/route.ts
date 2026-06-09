@@ -7,23 +7,19 @@ import User from '@/models/User';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // Accept both {contact} (web) and {email}/{phone} (mobile)
-    const contact = body.contact || body.email || body.phone;
+    const contact = body.contact || body.email;
     const { password } = body;
 
     if (!contact || !password) {
       return NextResponse.json(
-        { error: 'Contact et mot de passe sont requis' },
+        { error: 'Email et mot de passe sont requis' },
         { status: 400 }
       );
     }
 
     await connectDB();
 
-    const isEmail = contact.includes('@');
-    const user = await User.findOne(
-      isEmail ? { email: contact.toLowerCase() } : { phone: contact }
-    );
+    const user = await User.findOne({ email: contact.toLowerCase() });
 
     if (!user) {
       return NextResponse.json(
@@ -53,7 +49,6 @@ export async function POST(req: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        phone: user.phone,
         role: user.role,
       },
     });

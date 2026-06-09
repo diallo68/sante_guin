@@ -7,7 +7,6 @@ interface User {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
   role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
 }
 
@@ -41,10 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (identifier: string, password: string) => {
-    const isEmail = identifier.includes('@');
     const res = await api.post('/auth/login', {
-      email: isEmail ? identifier : undefined,
-      phone: !isEmail ? identifier : undefined,
+      email: identifier,
       password,
     });
     const { token: tok, user: u } = res.data;

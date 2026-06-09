@@ -35,9 +35,8 @@ const OAUTH_ERRORS: Record<string, string> = {
   oauth_server_error: 'Erreur serveur. Réessayez.',
 };
 
-type Tab       = 'login' | 'register';
-type RegMethod = 'email' | 'phone';
-type UserType  = 'patient' | 'doctor';
+type Tab      = 'login' | 'register';
+type UserType = 'patient' | 'doctor';
 type RegStep   = 'form' | 'otp';
 
 // ────────────────────────────────────────────────────────────
@@ -108,7 +107,6 @@ export default function AuthPage() {
 // Formulaire Connexion
 // ────────────────────────────────────────────────────────────
 function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ contact: '', password: '' });
@@ -129,11 +127,9 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!formData.contact.trim()) {
-      e.contact = loginMethod === 'email' ? 'L\'email est requis' : 'Le numéro est requis';
-    } else if (loginMethod === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact)) {
+      e.contact = 'L\'email est requis';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact)) {
       e.contact = 'Email invalide';
-    } else if (loginMethod === 'phone' && !/^\+?224\d{8}$/.test(formData.contact.replace(/\s/g, ''))) {
-      e.contact = 'Numéro invalide';
     }
     if (!formData.password) e.password = 'Le mot de passe est requis';
     setErrors(e);
@@ -163,25 +159,13 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 
   return (
     <div className="space-y-4">
-      {/* Toggle Email / Téléphone */}
-      <div className="flex bg-gray-100 rounded-full p-1">
-        {(['email', 'phone'] as const).map(m => (
-          <button key={m} type="button" onClick={() => setLoginMethod(m)}
-            className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${loginMethod === m ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
-            {m === 'email' ? '📧 Email' : '📱 Téléphone'}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">
-            {loginMethod === 'email' ? 'Email' : 'Numéro de téléphone'}
-          </label>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
           <input
-            type={loginMethod === 'email' ? 'email' : 'tel'}
+            type="email"
             name="contact" value={formData.contact} onChange={handleChange}
-            placeholder={loginMethod === 'email' ? 'votre@email.com' : '+224 620 00 00 00'}
+            placeholder="votre@email.com"
             className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.contact ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`}
           />
           {errors.contact && <p className="text-red-500 text-xs mt-1">{errors.contact}</p>}
@@ -250,7 +234,6 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 // ────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const [regStep, setRegStep] = useState<RegStep>('form');
-  const [method, setMethod]   = useState<RegMethod>('email');
   const [userType, setUserType] = useState<UserType>('patient');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword]   = useState(false);
@@ -259,7 +242,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
+    firstName: '', lastName: '', email: '',
     location: '', password: '', confirmPassword: '', acceptTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -299,12 +282,8 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     const e: Record<string, string> = {};
     if (!formData.firstName.trim()) e.firstName = 'Le prénom est requis';
     if (!formData.lastName.trim())  e.lastName  = 'Le nom est requis';
-    if (method === 'email') {
-      if (!formData.email.trim()) e.email = 'L\'email est requis';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = 'Email invalide';
-    } else {
-      if (!formData.phone.trim()) e.phone = 'Le numéro est requis';
-    }
+    if (!formData.email.trim()) e.email = 'L\'email est requis';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = 'Email invalide';
     if (userType === 'doctor' && selectedSpecialties.length === 0) e.specialty = 'Sélectionnez au moins une spécialité';
     if (userType === 'doctor' && !formData.location) e.location = 'La localisation est requise';
     if (!formData.password) e.password = 'Le mot de passe est requis';
@@ -325,8 +304,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firstName: formData.firstName, lastName: formData.lastName,
-          email: method === 'email' ? formData.email : undefined,
-          phone: method === 'phone' ? formData.phone : undefined,
+          email: formData.email,
           password: formData.password,
           role: userType === 'doctor' ? 'doctor' : 'patient',
           specialties: userType === 'doctor' ? selectedSpecialties : undefined,
@@ -402,10 +380,10 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     return (
       <div className="space-y-5">
         <div className="text-center">
-          <div className="text-4xl mb-2">{method === 'email' ? '📧' : '📱'}</div>
+          <div className="text-4xl mb-2">📧</div>
           <p className="font-black text-gray-900">Code de vérification</p>
           <p className="text-xs text-gray-500 mt-1">
-            Envoyé {method === 'email' ? 'à' : 'au'}{' '}
+            Envoyé à{' '}
             <span className="font-semibold text-gray-700">{verifyContact}</span>
           </p>
         </div>
@@ -460,16 +438,6 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         ))}
       </div>
 
-      {/* Toggle Email / Téléphone */}
-      <div className="flex bg-gray-100 rounded-full p-1">
-        {(['email', 'phone'] as RegMethod[]).map(m => (
-          <button key={m} type="button" onClick={() => setMethod(m)}
-            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${method === m ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
-            {m === 'email' ? '📧 Email' : '📱 Téléphone'}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleSendCode} className="space-y-3">
         {/* Prénom + Nom */}
         <div className="grid grid-cols-2 gap-2">
@@ -489,29 +457,13 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         </div>
 
         {/* Email */}
-        {method === 'email' && (
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">📧 Email *</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange}
-              placeholder="votre@email.com"
-              className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`} />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-          </div>
-        )}
-
-        {/* Téléphone */}
-        {method === 'phone' && (
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">📱 Téléphone *</label>
-            <div className={`flex items-center border-2 rounded-xl overflow-hidden transition-all ${errors.phone ? 'border-red-400' : 'border-gray-200 focus-within:border-teal-500'}`}>
-              <span className="px-3 py-2.5 text-xs font-semibold text-gray-500 bg-gray-50 border-r border-gray-200 shrink-0">🇬🇳 +224</span>
-              <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
-                placeholder="620 00 00 00"
-                className="flex-1 px-3 py-2.5 text-sm outline-none" />
-            </div>
-            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-          </div>
-        )}
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">📧 Email *</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange}
+            placeholder="votre@email.com"
+            className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`} />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+        </div>
 
         {/* Spécialités (médecin) */}
         {userType === 'doctor' && (
@@ -636,7 +588,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
           className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2">
           {loading
             ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Envoi...</>
-            : `${method === 'email' ? '📧' : '📱'} Recevoir le code de vérification →`}
+            : '📧 Recevoir le code de vérification →'}
         </button>
       </form>
 

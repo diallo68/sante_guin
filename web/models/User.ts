@@ -5,7 +5,6 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
   passwordHash: string;
   role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
   isVerified: boolean;
@@ -31,7 +30,6 @@ const UserSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
-    phone: { type: String, sparse: true, trim: true },
     passwordHash: { type: String, required: true },
     role: {
       type: String,
@@ -51,9 +49,7 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Index unique sur email et phone (sparse = ignore null)
 UserSchema.index({ email: 1 }, { unique: true, sparse: true });
-UserSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
 const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

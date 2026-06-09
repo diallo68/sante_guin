@@ -39,8 +39,6 @@ export async function POST(req: NextRequest) {
 
     if (user.email) {
       await sendOTPEmail({ to: user.email, name: user.firstName, otp });
-    } else {
-      console.log(`[SMS skipped] Nouveau code OTP pour ${user.phone} : ${otp}`);
     }
 
     return NextResponse.json({ message: 'Code renvoyé avec succès' });

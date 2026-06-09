@@ -9,13 +9,11 @@ import api from '@/lib/api';
 
 const T = '#0d9488';
 
-type Method = 'email' | 'phone';
 type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
-  const [method, setMethod] = useState<Method>('email');
+  const [step, setStep] = useState<Step>(2);
   const [contact, setContact] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [password, setPassword] = useState('');
@@ -24,10 +22,10 @@ export default function ForgotPasswordScreen() {
   const otpRefs = useRef<(TextInput | null)[]>([]);
 
   const handleStep2 = async () => {
-    if (!contact.trim()) return Alert.alert('Requis', 'Entrez votre email ou téléphone');
+    if (!contact.trim()) return Alert.alert('Requis', 'Entrez votre email');
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password/request', { method, contact: contact.trim() });
+      await api.post('/auth/forgot-password/request', { method: 'email', contact: contact.trim() });
       setStep(3);
     } catch {
       Alert.alert('Erreur', 'Identifiant introuvable. Vérifiez et réessayez.');
@@ -41,7 +39,7 @@ export default function ForgotPasswordScreen() {
     if (code.length < 6) return Alert.alert('Requis', 'Entrez le code à 6 chiffres');
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password/verify', { method, contact, otp: code });
+      await api.post('/auth/forgot-password/verify', { method: 'email', contact, otp: code });
       setStep(4);
     } catch {
       Alert.alert('Code incorrect', 'Vérifiez le code reçu et réessayez.');
@@ -55,7 +53,7 @@ export default function ForgotPasswordScreen() {
     if (password !== confirm) return Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password/reset', { method, contact, otp: otp.join(''), newPassword: password });
+      await api.post('/auth/forgot-password/reset', { method: 'email', contact, otp: otp.join(''), newPassword: password });
       setStep(5);
     } catch {
       Alert.alert('Erreur', 'Impossible de réinitialiser le mot de passe.');
@@ -77,15 +75,14 @@ export default function ForgotPasswordScreen() {
         {/* Header */}
         <View style={{ backgroundColor: T, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 40 }}>
           {step < 5 && (
-            <TouchableOpacity onPress={() => step === 1 ? router.back() : setStep((step - 1) as Step)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => step === 2 ? router.back() : setStep((step - 1) as Step)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}>
               <Ionicons name="arrow-back" size={20} color="#fff" />
               <Text style={{ color: '#fff', fontWeight: '600' }}>Retour</Text>
             </TouchableOpacity>
           )}
           <Text style={{ color: '#fff', fontSize: 26, fontWeight: '900' }}>Mot de passe oublié</Text>
           <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 6 }}>
-            {step === 1 && 'Choisissez comment réinitialiser'}
-            {step === 2 && 'Entrez votre identifiant'}
+            {step === 2 && 'Entrez votre email'}
             {step === 3 && 'Vérifiez votre code'}
             {step === 4 && 'Créez un nouveau mot de passe'}
             {step === 5 && 'Mot de passe réinitialisé !'}
@@ -101,48 +98,19 @@ export default function ForgotPasswordScreen() {
         </View>
 
         <View style={{ padding: 24, flex: 1 }}>
-          {/* STEP 1 — Method */}
-          {step === 1 && (
-            <View style={{ gap: 14 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 4 }}>Comment souhaitez-vous récupérer votre compte ?</Text>
-              {(['email', 'phone'] as Method[]).map(m => (
-                <TouchableOpacity
-                  key={m}
-                  onPress={() => setMethod(m)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 2, borderColor: method === m ? T : '#e2e8f0' }}
-                >
-                  <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: method === m ? '#f0fdfa' : '#f8fafc', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name={m === 'email' ? 'mail' : 'phone-portrait'} size={22} color={method === m ? T : '#94a3b8'} />
-                  </View>
-                  <View>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#1e293b' }}>{m === 'email' ? 'Par email' : 'Par SMS'}</Text>
-                    <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{m === 'email' ? 'Recevoir un code par email' : 'Recevoir un code par SMS'}</Text>
-                  </View>
-                  {method === m && <Ionicons name="checkmark-circle" size={22} color={T} style={{ marginLeft: 'auto' }} />}
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                onPress={() => setStep(2)}
-                style={{ backgroundColor: T, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Continuer</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* STEP 2 — Contact */}
           {step === 2 && (
             <View style={{ gap: 14 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: '#1e293b' }}>
-                {method === 'email' ? 'Votre adresse email' : 'Votre numéro de téléphone'}
+                Votre adresse email
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: '#e2e8f0', paddingHorizontal: 14 }}>
-                <Ionicons name={method === 'email' ? 'mail-outline' : 'phone-portrait-outline'} size={18} color="#94a3b8" />
+                <Ionicons name="mail-outline" size={18} color="#94a3b8" />
                 <TextInput
                   value={contact}
                   onChangeText={setContact}
-                  placeholder={method === 'email' ? 'exemple@email.com' : '+224 6XX XXX XXX'}
-                  keyboardType={method === 'email' ? 'email-address' : 'phone-pad'}
+                  placeholder="exemple@email.com"
+                  keyboardType="email-address"
                   autoCapitalize="none"
                   style={{ flex: 1, paddingVertical: 14, paddingLeft: 10, fontSize: 15, color: '#0f172a' }}
                 />

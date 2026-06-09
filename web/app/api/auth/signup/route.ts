@@ -19,7 +19,7 @@ function hashOTP(otp: string): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { firstName, lastName, email, phone, password, role = 'patient', specialties, location, pharmacyName, laboratoryName } = body;
+    const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName } = body;
 
     if (!firstName || !lastName || !password) {
       return NextResponse.json(
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!email && !phone) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email ou numéro de téléphone est requis' },
+        { error: 'L\'email est requis' },
         { status: 400 }
       );
     }
@@ -44,15 +44,10 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const query: any[] = [];
-    if (email) query.push({ email });
-    if (phone) query.push({ phone });
-
-    const existing = await User.findOne({ $or: query });
+    const existing = await User.findOne({ email });
     if (existing) {
-      const field = existing.email === email ? 'email' : 'téléphone';
       return NextResponse.json(
-        { error: `Ce ${field} est déjà utilisé` },
+        { error: 'Cet email est déjà utilisé' },
         { status: 409 }
       );
     }
@@ -65,8 +60,7 @@ export async function POST(req: NextRequest) {
     const user = await User.create({
       firstName,
       lastName,
-      email: email || undefined,
-      phone: phone || undefined,
+      email,
       passwordHash,
       role,
       isVerified: false,
@@ -81,16 +75,14 @@ export async function POST(req: NextRequest) {
         firstName,
         lastName,
         specialty: specialties?.[0] || 'Médecin généraliste',
-        email: email || undefined,
-        phone: phone || undefined,
+        email,
         city: location || 'Conakry',
       });
     } else if (role === 'pharmacist') {
       await Pharmacy.create({
         userId: user._id,
         name: pharmacyName || `Pharmacie ${lastName}`,
-        email: email || undefined,
-        phone: phone || undefined,
+        email,
         city: location || 'Conakry',
         address: location || 'Conakry',
       });
@@ -98,27 +90,20 @@ export async function POST(req: NextRequest) {
       await Laboratory.create({
         userId: user._id,
         name: laboratoryName || `Laboratoire ${lastName}`,
-        email: email || undefined,
-        phone: phone || undefined,
+        email,
         city: location || 'Conakry',
         address: location || 'Conakry',
       });
     }
 
-    // Envoyer le code OTP par email
-    if (email) {
-      await sendOTPEmail({ to: email, name: firstName, otp });
-    } else {
-      // SMS non encore configuré — on affiche le code en console
-      console.log(`[SMS skipped] Code OTP pour ${phone} : ${otp}`);
-    }
+    await sendOTPEmail({ to: email, name: firstName, otp });
 
     return NextResponse.json(
       {
         message: 'Code de vérification envoyé',
         userId: user._id.toString(),
-        contact: email || phone,
-        contactMethod: email ? 'email' : 'phone',
+        contact: email,
+        contactMethod: 'email',
       },
       { status: 201 }
     );
