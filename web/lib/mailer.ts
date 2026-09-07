@@ -1,4 +1,5 @@
 // Mailer — SendGrid HTTP API (port 443, jamais bloqué par Render)
+import { escapeHtml } from './htmlEscape';
 
 export async function sendEmail({
   to,
@@ -55,7 +56,7 @@ export async function sendOTPEmail({
           <h1 style="color:#fff;margin:0;font-size:22px">Mondocteur</h1>
           <p style="color:#99f6e4;margin:6px 0 0">Votre santé, entre de bonnes mains</p>
         </div>
-        <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${name},</h2>
+        <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${escapeHtml(name)},</h2>
         <p style="color:#4b5563;line-height:1.6">
           Voici votre code de vérification pour finaliser votre inscription :
         </p>
@@ -96,15 +97,15 @@ export async function sendAppointmentConfirmation({
           <h1 style="color:#fff;margin:0;font-size:22px">Mondocteur</h1>
           <p style="color:#99f6e4;margin:6px 0 0">Votre santé, entre de bonnes mains</p>
         </div>
-        <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${patientName},</h2>
+        <h2 style="color:#111827;font-size:18px;margin-bottom:8px">Bonjour ${escapeHtml(patientName)},</h2>
         <p style="color:#4b5563;line-height:1.6">
           Votre demande de rendez-vous a bien été enregistrée. Le médecin vous confirmera prochainement.
         </p>
         <div style="background:#fff;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #0d9488">
           <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-transform:uppercase;letter-spacing:0.05em">Détails du rendez-vous</p>
-          <p style="margin:4px 0;font-size:16px;font-weight:700;color:#111827">${doctorName}</p>
-          <p style="margin:4px 0;color:#374151">📅 ${dateFormatted}</p>
-          <p style="margin:4px 0;color:#374151">🕐 ${time}</p>
+          <p style="margin:4px 0;font-size:16px;font-weight:700;color:#111827">${escapeHtml(doctorName)}</p>
+          <p style="margin:4px 0;color:#374151">📅 ${escapeHtml(dateFormatted)}</p>
+          <p style="margin:4px 0;color:#374151">🕐 ${escapeHtml(time)}</p>
         </div>
         <p style="color:#6b7280;font-size:13px;margin-top:24px">
           Connectez-vous à votre compte sur

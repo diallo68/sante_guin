@@ -1,0 +1,76 @@
+name: Web CI
+
+# Bloque les régressions sur l'app web : typecheck, suite de tests
+# (intégration contre une vraie base MongoDB en mémoire) et build de
+# production, à chaque push et pull request touchant web/ — voir audit
+# section 7 ("Aucune suite de régression persistante").
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      # Le binaire mongod téléchargé par mongodb-memory-server (utilisé par
+      # la suite de tests) est volumineux : mis en cache pour ne pas le
+      # retélécharger à chaque exécution.
+      - name: Cache mongodb-memory-server binary
+        uses: actions/cache@v4
+        with:
+          path: web/node_modules/.cache/mongodb-memory-server
+          key: mongodb-binaries-${{ runner.os }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (app)
+        run: pnpm typecheck
+
+      - name: Typecheck (tests)
+        run: pnpm test:typecheck
+
+      - name: Run tests
+        run: pnpm test
+
+      # `pnpm build` échouerait aussi sur une erreur ESLint (ignoreDuringBuilds:
+      # false — voir next.config.js), mais lint séparément donne un retour
+      # plus rapide et plus lisible qu'un échec de build.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Valeurs factices : le build a seulement besoin que ces variables
+          # soient définies (lib/db.ts et lib/auth.ts échouent sinon dès
+          # l'import), pas d'une base ou d'un secret réellement valides.
+          MONGODB_URI: mongodb://127.0.0.1:27017/ci-build-placeholder
+          JWT_SECRET: ci-build-placeholder-secret-never-used-at-runtime
+          NEXT_PUBLIC_APP_URL: http://localhost:3000

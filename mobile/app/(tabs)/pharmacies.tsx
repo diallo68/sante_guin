@@ -26,33 +26,47 @@ export default function PharmaciesScreen() {
   const [only24h, setOnly24h] = useState(false);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchPharmacies = async (q = search, h = only24h) => {
+  // Seule la première page était jamais chargée — voir audit B22.
+  const fetchPharmacies = async (q = search, h = only24h, pageNum = 1, append = false) => {
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | number> = { page: pageNum };
       if (q.trim()) params.search = q.trim();
       if (h) params.open24h = 'true';
       const res = await api.get('/pharmacies', { params });
-      setPharmacies(res.data.pharmacies || []);
+      const newItems: Pharmacy[] = res.data.pharmacies || [];
+      setPharmacies(prev => append ? [...prev, ...newItems] : newItems);
+      setPage(pageNum);
+      setHasMore(pageNum < (res.data.pages || 1));
     } catch {
-      setPharmacies([]);
+      if (!append) setPharmacies([]);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   // Debounce search 400ms
   useEffect(() => {
-    const t = setTimeout(() => fetchPharmacies(search, only24h), 400);
+    const t = setTimeout(() => fetchPharmacies(search, only24h, 1, false), 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => { fetchPharmacies(search, only24h); }, [only24h]);
+  useEffect(() => { fetchPharmacies(search, only24h, 1, false); }, [only24h]);
 
-  const onRefresh = () => { setRefreshing(true); fetchPharmacies(); };
+  const onRefresh = () => { setRefreshing(true); fetchPharmacies(search, only24h, 1, false); };
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    fetchPharmacies(search, only24h, page + 1, true);
+  };
 
   const renderPharmacy = ({ item }: { item: Pharmacy }) => (
     <TouchableOpacity
@@ -133,6 +147,9 @@ export default function PharmaciesScreen() {
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#059669" />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <View style={{ paddingVertical: 20 }}><ActivityIndicator color="#059669" /></View> : null}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>💊</Text>

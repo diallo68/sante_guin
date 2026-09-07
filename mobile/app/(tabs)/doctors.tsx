@@ -19,7 +19,9 @@ interface Doctor {
   consultationFee?: number;
 }
 
-const SPECIALTIES = ['Tous', 'Généraliste', 'Cardiologue', 'Pédiatre', 'Gynécologue', 'Chirurgien', 'Dermatologue', 'ORL'];
+// 'Généraliste' ne correspondait jamais à la valeur réellement stockée
+// ('Médecin généraliste', choisie à l'inscription) — voir audit B22.
+const SPECIALTIES = ['Tous', 'Médecin généraliste', 'Cardiologue', 'Pédiatre', 'Dermatologue', 'Orthopédiste', 'Ophtalmologue', 'ORL', 'Neurologue'];
 
 export default function DoctorsScreen() {
   const router = useRouter();
@@ -28,33 +30,48 @@ export default function DoctorsScreen() {
   const [specialty, setSpecialty] = useState('Tous');
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchDoctors = async (q = search, sp = specialty) => {
+  // Seule la première page était jamais chargée : au-delà de 12 résultats,
+  // les médecins suivants restaient invisibles — voir audit B22.
+  const fetchDoctors = async (q = search, sp = specialty, pageNum = 1, append = false) => {
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | number> = { page: pageNum };
       if (q.trim()) params.search = q.trim();
       if (sp !== 'Tous') params.specialty = sp;
       const res = await api.get('/doctors', { params });
-      setDoctors(res.data.doctors || []);
+      const newDoctors: Doctor[] = res.data.doctors || [];
+      setDoctors(prev => append ? [...prev, ...newDoctors] : newDoctors);
+      setPage(pageNum);
+      setHasMore(pageNum < (res.data.pages || 1));
     } catch {
-      setDoctors([]);
+      if (!append) setDoctors([]);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   // Debounce search 400ms
   useEffect(() => {
-    const t = setTimeout(() => fetchDoctors(search, specialty), 400);
+    const t = setTimeout(() => fetchDoctors(search, specialty, 1, false), 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => { fetchDoctors(search, specialty); }, [specialty]);
+  useEffect(() => { fetchDoctors(search, specialty, 1, false); }, [specialty]);
 
-  const onRefresh = () => { setRefreshing(true); fetchDoctors(); };
+  const onRefresh = () => { setRefreshing(true); fetchDoctors(search, specialty, 1, false); };
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    fetchDoctors(search, specialty, page + 1, true);
+  };
 
   const renderDoctor = ({ item }: { item: Doctor }) => (
     <TouchableOpacity
@@ -161,6 +178,15 @@ export default function DoctorsScreen() {
           contentContainerStyle={{ padding: 16, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0d9488" />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator color="#0d9488" />
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Ionicons name="medkit-outline" size={48} color="#d1d5db" />

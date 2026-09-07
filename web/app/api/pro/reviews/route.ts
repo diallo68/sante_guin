@@ -27,14 +27,20 @@ export async function GET(req: NextRequest) {
       .limit(50)
       .lean();
 
-    const formatted = reviews.map(r => ({
-      _id: r._id,
-      patientName: `${(r.patientId as any).firstName} ${(r.patientId as any).lastName}`,
-      rating: r.rating,
-      comment: r.comment,
-      date: r.createdAt,
-      verified: true,
-    }));
+    // Un patient supprimé laisse `patientId` non peuplé (null) plutôt que
+    // de faire échouer la requête : on tolère cette absence au lieu de
+    // déréférencer une valeur potentiellement nulle — voir audit B17.
+    const formatted = reviews.map(r => {
+      const patient = r.patientId as any;
+      return {
+        _id: r._id,
+        patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Patient supprimé',
+        rating: r.rating,
+        comment: r.comment,
+        date: r.createdAt,
+        verified: true,
+      };
+    });
 
     return NextResponse.json({
       rating: doctor.rating,

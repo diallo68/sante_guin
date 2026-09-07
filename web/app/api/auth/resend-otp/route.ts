@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import { sendOTPEmail } from '@/lib/mailer';
-
-function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function hashOTP(otp: string): string {
-  return crypto.createHash('sha256').update(otp).digest('hex');
-}
+import { generateOTP, hashOTP } from '@/lib/otp';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +11,13 @@ export async function POST(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: 'userId est requis' }, { status: 400 });
+    }
+
+    // Limite le renvoi d'emails (spam) et empêche de réinitialiser sans
+    // fin la fenêtre de tentatives de /verify-otp — voir audit S13.
+    const resendLimit = rateLimit(`resend-otp:${userId}`, 3, 10 * 60 * 1000);
+    if (!resendLimit.allowed) {
+      return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
     }
 
     await connectDB();

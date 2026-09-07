@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/auth';
+import { requireActiveSubscription } from '@/lib/proAccess';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -24,9 +24,12 @@ Règles importantes :
 
 export async function POST(req: NextRequest) {
   try {
-    const authUser = await getAuthUser(req);
-    if (!authUser || !['doctor', 'pharmacist', 'laboratorist'].includes(authUser.role)) {
-      return NextResponse.json({ error: 'Accès réservé aux professionnels de santé' }, { status: 403 });
+    // Même contrôle que /api/pro/access (rôle + abonnement actif) : sans ça,
+    // un compte professionnel non abonné pouvait utiliser l'IA gratuitement
+    // en appelant l'API directement — voir audit S10.
+    const access = await requireActiveSubscription(req);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
     const body = await req.json();
@@ -34,6 +37,32 @@ export async function POST(req: NextRequest) {
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages invalides' }, { status: 400 });
+    }
+
+    // Les rôles et contenus fournis par le client n'étaient pas validés :
+    // un message `{ role: 'system', ... }` pouvait écraser ou compléter le
+    // prompt système, et aucune limite de taille n'existait — voir audit
+    // S20. Seuls 'user'/'assistant' sont acceptés ; le rôle système reste
+    // fixé par le serveur.
+    const MAX_CONTENT_LENGTH = 8000;
+    const sanitizedMessages = messages.slice(-20).filter(
+      (m: unknown): m is { role: 'user' | 'assistant'; content: string } =>
+        !!m && typeof m === 'object' &&
+        ((m as any).role === 'user' || (m as any).role === 'assistant') &&
+        typeof (m as any).content === 'string' &&
+        (m as any).content.length > 0 &&
+        (m as any).content.length <= MAX_CONTENT_LENGTH
+    );
+
+    if (sanitizedMessages.length === 0) {
+      return NextResponse.json({ error: 'Messages invalides' }, { status: 400 });
+    }
+
+    if (image && (typeof image !== 'string' || image.length > 8_000_000)) {
+      return NextResponse.json({ error: 'Image invalide' }, { status: 400 });
+    }
+    if (imagePrompt && (typeof imagePrompt !== 'string' || imagePrompt.length > MAX_CONTENT_LENGTH)) {
+      return NextResponse.json({ error: 'Requête invalide' }, { status: 400 });
     }
 
     const apiKey = process.env.GROQ_API_KEY;
@@ -65,7 +94,7 @@ export async function POST(req: NextRequest) {
       // Mode texte : conversation normale
       groqMessages = [
         { role: 'system', content: SYSTEM_PROMPT },
-        ...messages.slice(-20),
+        ...sanitizedMessages,
       ];
     }
 

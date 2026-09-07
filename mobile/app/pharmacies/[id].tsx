@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@/lib/api';
+import { isCurrentlyOpen } from '@/lib/openingHours';
 
 interface Pharmacy {
   _id: string;
@@ -21,16 +22,6 @@ interface Pharmacy {
   rating: number;
   reviewCount: number;
   isVerified: boolean;
-}
-
-function isOpen(p: Pharmacy) {
-  if (p.isOpen24h) return true;
-  if (!p.openTime || !p.closeTime) return false;
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = p.openTime.split(':').map(Number);
-  const [ch, cm] = p.closeTime.split(':').map(Number);
-  return cur >= oh * 60 + om && cur < ch * 60 + cm;
 }
 
 export default function PharmacyDetailScreen() {
@@ -65,7 +56,7 @@ export default function PharmacyDetailScreen() {
     );
   }
 
-  const open = isOpen(pharmacy);
+  const open = isCurrentlyOpen(pharmacy.openTime, pharmacy.closeTime, pharmacy.isOpen24h);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Conversation from '@/models/Conversation';
@@ -7,6 +8,8 @@ import User from '@/models/User';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
+import Appointment from '@/models/Appointment';
+import PatientRecord from '@/models/PatientRecord';
 
 // GET /api/conversations/new — list available contacts to start a conversation with
 export async function GET(req: NextRequest) {
@@ -68,11 +71,33 @@ export async function GET(req: NextRequest) {
       }
     }
   } else {
-    // Pros can contact: patients + other pros (doctors, pharmacies, labs)
-    const patients = await User.find({ role: 'patient' })
-      .select('_id firstName lastName')
-      .limit(100)
+    // Pros can contact: patients with an existing relationship (rendez-vous
+    // ou dossier patient) + other pros. Sans cette restriction, n'importe
+    // quel compte professionnel auto-déclaré pouvait lister jusqu'à 100
+    // patients sans lien de soins — voir audit S16.
+    const patientIds = new Set<string>();
+
+    const doctorProfile = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
+    if (doctorProfile) {
+      const apptPatientIds = await Appointment.distinct('patientId', { doctorId: doctorProfile._id });
+      apptPatientIds.forEach((id: any) => patientIds.add(String(id)));
+    }
+
+    const manualRecords = await PatientRecord.find({ proUserId: authUser.userId, email: { $exists: true, $ne: '' } })
+      .select('email')
       .lean();
+    if (manualRecords.length > 0) {
+      const emails = manualRecords.map(r => r.email).filter(Boolean);
+      const linkedUsers = await User.find({ role: 'patient', email: { $in: emails } }).select('_id').lean();
+      linkedUsers.forEach(u => patientIds.add(String(u._id)));
+    }
+
+    const patients = patientIds.size > 0
+      ? await User.find({ _id: { $in: Array.from(patientIds) } })
+          .select('_id firstName lastName')
+          .limit(100)
+          .lean()
+      : [];
     for (const p of patients) {
       contacts.push({
         userId: String(p._id),
@@ -139,15 +164,47 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ contacts });
 }
 
+type ConversationRole = 'patient' | 'doctor' | 'pharmacist' | 'laboratorist';
+interface ResolvedParticipant {
+  role: ConversationRole;
+  profileId: mongoose.Types.ObjectId | undefined;
+  displayName: string;
+}
+
+// Résout le rôle, le profil et le nom d'affichage d'un utilisateur à
+// partir de son seul userId — jamais à partir de valeurs fournies par le
+// client, qui pouvaient auparavant usurper le rôle ou le nom affiché d'un
+// participant à la conversation — voir audit S16.
+async function resolveParticipant(userId: string): Promise<ResolvedParticipant | null> {
+  const user = await User.findById(userId).select('firstName lastName role').lean();
+  if (!user) return null;
+
+  if (user.role === 'patient') {
+    return { role: 'patient', profileId: undefined, displayName: `${user.firstName} ${user.lastName}` };
+  }
+
+  const doc = await Doctor.findOne({ userId }).select('_id firstName lastName').lean();
+  if (doc) return { role: 'doctor', profileId: doc._id, displayName: `Dr. ${doc.firstName} ${doc.lastName}` };
+
+  const pharmacy = await Pharmacy.findOne({ userId }).select('_id name').lean();
+  if (pharmacy) return { role: 'pharmacist', profileId: pharmacy._id, displayName: pharmacy.name };
+
+  const lab = await Laboratory.findOne({ userId }).select('_id name').lean();
+  if (lab) return { role: 'laboratorist', profileId: lab._id, displayName: lab.name };
+
+  // Rôle sans profil de messagerie connu (ex : admin) — pas un participant
+  // valide pour une conversation.
+  return null;
+}
+
 // POST /api/conversations/new — create or reuse a document-sharing conversation
 export async function POST(req: NextRequest) {
   const authUser = await getAuthUser(req);
   if (!authUser) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-  const { recipientUserId, recipientRole, recipientProfileId, recipientDisplayName } =
-    await req.json();
+  const { recipientUserId } = await req.json();
 
-  if (!recipientUserId || !recipientRole || !recipientDisplayName) {
+  if (!recipientUserId) {
     return NextResponse.json({ error: 'Destinataire requis' }, { status: 400 });
   }
   if (recipientUserId === authUser.userId) {
@@ -156,24 +213,13 @@ export async function POST(req: NextRequest) {
 
   await connectDB();
 
-  // Find sender display name
-  let senderDisplayName = '';
-  if (authUser.role === 'patient') {
-    const user = await User.findById(authUser.userId).select('firstName lastName').lean();
-    senderDisplayName = user ? `${user.firstName} ${user.lastName}` : 'Patient';
-  } else {
-    const doc = await Doctor.findOne({ userId: authUser.userId }).select('firstName lastName').lean();
-    if (doc) {
-      senderDisplayName = `Dr. ${doc.firstName} ${doc.lastName}`;
-    } else {
-      const pharmacy = await Pharmacy.findOne({ userId: authUser.userId }).select('name').lean();
-      if (pharmacy) {
-        senderDisplayName = pharmacy.name;
-      } else {
-        const lab = await Laboratory.findOne({ userId: authUser.userId }).select('name').lean();
-        senderDisplayName = lab?.name ?? 'Professionnel';
-      }
-    }
+  const [sender, recipient] = await Promise.all([
+    resolveParticipant(authUser.userId),
+    resolveParticipant(recipientUserId),
+  ]);
+
+  if (!sender || !recipient) {
+    return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
   }
 
   // Check if a document conversation already exists between these two users
@@ -188,24 +234,20 @@ export async function POST(req: NextRequest) {
   }
 
   // Create new document conversation
-  const senderDoc = authUser.role !== 'patient'
-    ? await Doctor.findOne({ userId: authUser.userId }).select('_id').lean()
-    : null;
-
   const conversation = await Conversation.create({
     type: 'document',
     participants: [
       {
         userId: authUser.userId,
-        role: authUser.role,
-        profileId: senderDoc?._id,
-        displayName: senderDisplayName,
+        role: sender.role,
+        profileId: sender.profileId,
+        displayName: sender.displayName,
       },
       {
         userId: recipientUserId,
-        role: recipientRole,
-        profileId: recipientProfileId,
-        displayName: recipientDisplayName,
+        role: recipient.role,
+        profileId: recipient.profileId,
+        displayName: recipient.displayName,
       },
     ],
     lastMessage: '',

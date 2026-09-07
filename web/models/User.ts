@@ -5,10 +5,12 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   email?: string;
+  phone?: string;
   passwordHash: string;
   role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
   isVerified: boolean;
   isSuspended: boolean;
+  tokenVersion: number;
   otpCode?: string;
   otpExpiry?: Date;
   favorites: {
@@ -25,11 +27,17 @@ const UserSchema = new Schema<IUser>(
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     email: {
+      // `sparse` seul ici, sans `index`/`unique` : l'index réel (unique,
+      // sparse) est déclaré explicitement plus bas via `.index()`, pour ne
+      // pas le déclarer deux fois (avertissement Mongoose sinon).
       type: String,
-      sparse: true,
       lowercase: true,
       trim: true,
     },
+    // Absent jusqu'ici : les mises à jour de profil qui l'incluaient
+    // étaient silencieusement ignorées par Mongoose (mode `strict` par
+    // défaut) — voir audit B10.
+    phone: { type: String, sparse: true, trim: true },
     passwordHash: { type: String, required: true },
     role: {
       type: String,
@@ -38,6 +46,10 @@ const UserSchema = new Schema<IUser>(
     },
     isVerified: { type: Boolean, default: false },
     isSuspended: { type: Boolean, default: false },
+    // Incrémenté à chaque changement de mot de passe ou action admin
+    // (suspension, changement de rôle) pour révoquer immédiatement les
+    // tokens déjà émis, sans attendre leur expiration.
+    tokenVersion: { type: Number, default: 0 },
     otpCode: { type: String },
     otpExpiry: { type: Date },
     favorites: {

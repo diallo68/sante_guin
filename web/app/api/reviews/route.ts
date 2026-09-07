@@ -4,6 +4,25 @@ import { getAuthUser } from '@/lib/auth';
 import Review from '@/models/Review';
 import Doctor from '@/models/Doctor';
 
+// Web et mobile affichent tous deux `patientName`/`date`, mais l'API
+// renvoyait `patientId` (peuplé) et `createdAt` — les deux champs
+// affichés restaient donc vides côté client — voir audit B15. Un DTO
+// commun, utilisé à la fois en lecture et à la création, évite que les
+// deux dérivent à nouveau.
+function toReviewDTO(review: any) {
+  const patient = review.patientId;
+  return {
+    _id: review._id,
+    doctorId: review.doctorId,
+    patientName: patient && typeof patient === 'object'
+      ? `${patient.firstName} ${patient.lastName}`
+      : 'Patient',
+    rating: review.rating,
+    comment: review.comment,
+    date: review.createdAt,
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -19,7 +38,7 @@ export async function GET(req: NextRequest) {
       .limit(20)
       .lean();
 
-    return NextResponse.json({ reviews });
+    return NextResponse.json({ reviews: reviews.map(toReviewDTO) });
   } catch (error) {
     console.error('Reviews GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
@@ -71,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     await review.populate('patientId', 'firstName lastName');
-    return NextResponse.json({ review }, { status: 201 });
+    return NextResponse.json({ review: toReviewDTO(review.toObject()) }, { status: 201 });
   } catch (error) {
     console.error('Reviews POST error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

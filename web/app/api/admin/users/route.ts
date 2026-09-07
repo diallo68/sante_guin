@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import User from '@/models/User';
+import { escapeRegex } from '@/lib/queryHelpers';
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthUser(req);
@@ -14,17 +15,19 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search') || '';
   const role = searchParams.get('role') || '';
-  const page = parseInt(searchParams.get('page') || '1');
+  const parsedPage = parseInt(searchParams.get('page') || '1', 10);
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const limit = 20;
 
   const filter: Record<string, unknown> = {};
   if (role) filter.role = role;
   if (search) {
+    const pattern = escapeRegex(search);
     filter.$or = [
-      { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-      { phone: { $regex: search, $options: 'i' } },
+      { firstName: { $regex: pattern, $options: 'i' } },
+      { lastName: { $regex: pattern, $options: 'i' } },
+      { email: { $regex: pattern, $options: 'i' } },
+      { phone: { $regex: pattern, $options: 'i' } },
     ];
   }
 

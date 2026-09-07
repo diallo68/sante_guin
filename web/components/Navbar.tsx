@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Menu, X, User, LogOut, Calendar, ChevronDown, MessageSquare, ShieldCheck, Search } from 'lucide-react';
+import { logout } from '@/lib/clientLogout';
 
 interface AuthUser {
   id: string;
@@ -65,7 +66,7 @@ export default function Navbar() {
   }, [user]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await logout();
     setUser(null);
     setDropdownOpen(false);
     router.push('/');

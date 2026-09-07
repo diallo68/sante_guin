@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
 import { signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
-
-function hashOTP(otp: string): string {
-  return crypto.createHash('sha256').update(otp).digest('hex');
-}
+import { hashOTP } from '@/lib/otp';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +14,14 @@ export async function POST(req: NextRequest) {
         { error: 'userId et code OTP sont requis' },
         { status: 400 }
       );
+    }
+
+    // Un code à 6 chiffres n'a que 900 000 valeurs possibles : sans limite
+    // de tentatives, il est raisonnablement devinable par force brute
+    // pendant sa durée de vie de 10 minutes — voir audit S13.
+    const otpLimit = rateLimit(`verify-otp:${userId}`, 10, 10 * 60 * 1000);
+    if (!otpLimit.allowed) {
+      return NextResponse.json({ error: 'Trop de tentatives. Demandez un nouveau code.' }, { status: 429 });
     }
 
     await connectDB();
@@ -56,6 +61,7 @@ export async function POST(req: NextRequest) {
       userId: user._id.toString(),
       email: user.email || '',
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
 
     const response = NextResponse.json(

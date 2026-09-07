@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Pharmacy from '@/models/Pharmacy';
+import { escapeRegex, parsePagination } from '@/lib/queryHelpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,15 +16,14 @@ export async function GET(req: NextRequest) {
     if (city) query.city = city;
     if (open24h === 'true') query.isOpen24h = true;
     if (search) {
+      const pattern = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { address: { $regex: search, $options: 'i' } },
+        { name: { $regex: pattern, $options: 'i' } },
+        { address: { $regex: pattern, $options: 'i' } },
       ];
     }
 
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(50, parseInt(searchParams.get('limit') || '12'));
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(searchParams, { defaultLimit: 12, maxLimit: 50 });
 
     const [pharmacies, total] = await Promise.all([
       Pharmacy.find(query)

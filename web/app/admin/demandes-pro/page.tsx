@@ -38,13 +38,22 @@ export default function DemandesProPage() {
   const [selected, setSelected] = useState<Request | null>(null);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState('');
 
+  // Sans try/finally, un échec réseau laissait `loading`/`saving` bloqués
+  // et l'erreur d'activation (voir audit B20 — compte introuvable, profil
+  // manquant) n'était jamais montrée à l'admin — voir audit B26.
   const fetchRequests = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/admin/subscription-requests?status=${filter}`);
-    const data = await res.json();
-    setRequests(data.requests || []);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/admin/subscription-requests?status=${filter}`);
+      const data = await res.json();
+      setRequests(data.requests || []);
+    } catch {
+      setRequests([]);
+    } finally {
+      setLoading(false);
+    }
   }, [filter]);
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
@@ -52,31 +61,54 @@ export default function DemandesProPage() {
   const openDetail = (r: Request) => {
     setSelected(r);
     setNote(r.adminNote || '');
+    setActionError('');
   };
 
   const updateStatus = async (id: string, status: string) => {
     setSaving(true);
-    await fetch('/api/admin/subscription-requests', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status, adminNote: note }),
-    });
-    setSaving(false);
-    setSelected(null);
-    fetchRequests();
+    setActionError('');
+    try {
+      const res = await fetch('/api/admin/subscription-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, adminNote: note }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error || 'Action impossible.');
+        return;
+      }
+      setSelected(null);
+      fetchRequests();
+    } catch {
+      setActionError('Erreur réseau. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sendMessage = async () => {
     if (!selected || !note.trim()) return;
     setSaving(true);
-    await fetch('/api/admin/subscription-requests', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: selected._id, adminNote: note, sendMessageOnly: true }),
-    });
-    setSaving(false);
-    setSelected(null);
-    fetchRequests();
+    setActionError('');
+    try {
+      const res = await fetch('/api/admin/subscription-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selected._id, adminNote: note, sendMessageOnly: true }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setActionError(data.error || 'Envoi impossible.');
+        return;
+      }
+      setSelected(null);
+      fetchRequests();
+    } catch {
+      setActionError('Erreur réseau. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const counts = {
@@ -265,6 +297,7 @@ export default function DemandesProPage() {
                   ✉️ Envoyer un message sans décision
                 </button>
                 {saving && <p className="text-center text-xs text-gray-400">Traitement en cours…</p>}
+                {actionError && <p className="text-center text-xs text-red-500 font-semibold">{actionError}</p>}
               </div>
             </div>
           </div>

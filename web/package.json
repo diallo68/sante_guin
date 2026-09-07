@@ -7,30 +7,44 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:typecheck": "tsc --noEmit -p tests/tsconfig.json"
   },
   "dependencies": {
-    "@types/nodemailer": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.2",
     "lucide-react": "^0.263.1",
-    "mongoose": "^9.5.0",
-    "next": "^14.0.0",
-    "nodemailer": "^8.0.7",
+    "mongoose": "^9.9.5",
+    "next": "^15.5.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@types/bcryptjs": "^3.0.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "autoprefixer": "^10.4.14",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitest/coverage-v8": "^5.0.0",
+    "autoprefixer": "^10.5.5",
     "dotenv": "^17.4.2",
-    "eslint": "^8.45.0",
-    "eslint-config-next": "^14.0.0",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.0.0"
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.25",
+    "mongodb-memory-server": "^11.2.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.0.0",
+    "vitest": "^5.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.28",
+      "nanoid": "^3.3.18",
+      "brace-expansion": "^1.1.16"
+    }
   }
 }

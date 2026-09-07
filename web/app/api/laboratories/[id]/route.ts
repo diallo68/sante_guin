@@ -4,11 +4,12 @@ import Laboratory from '@/models/Laboratory';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await connectDB();
-    const laboratory = await Laboratory.findById(params.id).lean();
+    const laboratory = await Laboratory.findById(id).lean();
     if (!laboratory) return NextResponse.json({ error: 'Laboratoire introuvable' }, { status: 404 });
     return NextResponse.json({ laboratory });
   } catch {

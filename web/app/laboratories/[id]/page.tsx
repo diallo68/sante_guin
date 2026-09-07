@@ -7,6 +7,7 @@ import {
   Star, MapPin, Clock, Phone, Mail, Heart,
   CheckCircle, AlertCircle, Loader2, FlaskConical,
 } from 'lucide-react';
+import { isCurrentlyOpen } from '@/lib/openingHours';
 
 interface Laboratory {
   _id: string;
@@ -23,16 +24,6 @@ interface Laboratory {
   rating: number;
   reviewCount: number;
   isVerified: boolean;
-}
-
-function isCurrentlyOpen(lab: Laboratory): boolean {
-  if (lab.isOpen24h) return true;
-  if (!lab.openTime || !lab.closeTime) return false;
-  const now = new Date();
-  const [oh, om] = lab.openTime.split(':').map(Number);
-  const [ch, cm] = lab.closeTime.split(':').map(Number);
-  const current = now.getHours() * 60 + now.getMinutes();
-  return current >= oh * 60 + om && current < ch * 60 + cm;
 }
 
 export default function LaboratoryDetailPage() {
@@ -81,7 +72,7 @@ export default function LaboratoryDetailPage() {
     );
   }
 
-  const isOpen = isCurrentlyOpen(laboratory);
+  const isOpen = isCurrentlyOpen(laboratory.openTime, laboratory.closeTime, laboratory.isOpen24h);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -111,13 +102,21 @@ export default function LaboratoryDetailPage() {
                     <h1 className="text-2xl font-bold text-gray-900">{laboratory.name}</h1>
                     <button
                       onClick={async () => {
-                        const next = !isFavorite;
-                        setIsFavorite(next);
-                        await fetch('/api/favorites', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ type: 'laboratory', targetId: id }),
-                        });
+                        const previous = isFavorite;
+                        setIsFavorite(!previous);
+                        try {
+                          const res = await fetch('/api/favorites', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ type: 'laboratory', targetId: id }),
+                          });
+                          // Revenir à l'état précédent si la requête échoue —
+                          // sans ça l'icône restait "favori" même en échec —
+                          // voir audit B14.
+                          if (!res.ok) setIsFavorite(previous);
+                        } catch {
+                          setIsFavorite(previous);
+                        }
                       }}
                       className="p-2 hover:bg-gray-100 rounded-full transition"
                       title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}

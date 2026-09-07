@@ -33,6 +33,15 @@ const AppointmentSchema = new Schema<IAppointment>(
 AppointmentSchema.index({ patientId: 1, date: -1 });
 AppointmentSchema.index({ doctorId: 1, date: -1 });
 
+// Empêche au niveau base deux rendez-vous actifs sur le même créneau pour
+// le même médecin : la vérification applicative seule (find puis create)
+// laissait une fenêtre de course entre deux requêtes concurrentes —
+// voir audit B03.
+AppointmentSchema.index(
+  { doctorId: 1, date: 1, time: 1 },
+  { unique: true, partialFilterExpression: { status: { $in: ['pending', 'confirmed'] } } }
+);
+
 const Appointment: Model<IAppointment> =
   mongoose.models.Appointment ||
   mongoose.model<IAppointment>('Appointment', AppointmentSchema);

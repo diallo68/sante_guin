@@ -12,7 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 const T = '#0d9488';
 const DARK = '#0f2a2a';
 
+// `stats` n'existe que pour les médecins (pharmaciens/laboratoristes n'ont
+// pas de rendez-vous dans ce système) ; l'absence de ce champ faisait
+// planter l'écran avant ce correctif — voir audit B12.
 interface DashboardData {
+  role: 'doctor' | 'pharmacist' | 'laboratorist';
   profile: {
     firstName: string;
     lastName: string;
@@ -21,20 +25,20 @@ interface DashboardData {
     reviewCount: number;
     isVerified: boolean;
   };
-  stats: {
+  stats?: {
     todayAppointments: number;
     monthAppointments: number;
     pendingAppointments: number;
     totalPatients?: number;
+    upcomingAppointments: {
+      _id: string;
+      patientId?: { firstName: string; lastName: string };
+      date: string;
+      time: string;
+      reason?: string;
+      status: string;
+    }[];
   };
-  upcomingAppointments: {
-    _id: string;
-    patientId?: { firstName: string; lastName: string };
-    date: string;
-    time: string;
-    reason?: string;
-    status: string;
-  }[];
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -114,15 +118,20 @@ export default function ProDashboardScreen() {
           </View>
         ) : (
           <View style={{ padding: 18, marginTop: -18, gap: 16 }}>
-            {/* Stats */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <StatCard label="Aujourd'hui" value={data?.stats.todayAppointments ?? 0} icon="today-outline" bg="#f0fdfa" />
-              <StatCard label="Ce mois" value={data?.stats.monthAppointments ?? 0} icon="calendar-outline" bg="#eff6ff" />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <StatCard label="En attente" value={data?.stats.pendingAppointments ?? 0} icon="hourglass-outline" bg="#fefce8" />
-              <StatCard label="Patients" value={data?.stats.totalPatients ?? 0} icon="people-outline" bg="#fdf4ff" />
-            </View>
+            {/* Stats — uniquement pour les médecins, seul rôle ayant des
+                rendez-vous dans ce système (voir audit B12) */}
+            {data?.stats && (
+              <>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <StatCard label="Aujourd'hui" value={data.stats.todayAppointments ?? 0} icon="today-outline" bg="#f0fdfa" />
+                  <StatCard label="Ce mois" value={data.stats.monthAppointments ?? 0} icon="calendar-outline" bg="#eff6ff" />
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <StatCard label="En attente" value={data.stats.pendingAppointments ?? 0} icon="hourglass-outline" bg="#fefce8" />
+                  <StatCard label="Patients" value={data.stats.totalPatients ?? 0} icon="people-outline" bg="#fdf4ff" />
+                </View>
+              </>
+            )}
 
             {/* Quick actions grid */}
             <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 }}>
@@ -144,7 +153,7 @@ export default function ProDashboardScreen() {
             </View>
 
             {/* Upcoming appointments */}
-            {data?.upcomingAppointments && data.upcomingAppointments.length > 0 && (
+            {data?.stats?.upcomingAppointments && data.stats.upcomingAppointments.length > 0 && (
               <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                   <Text style={{ fontSize: 13, fontWeight: '800', color: '#334155', letterSpacing: 1, textTransform: 'uppercase' }}>Prochains rendez-vous</Text>
@@ -152,7 +161,7 @@ export default function ProDashboardScreen() {
                     <Text style={{ color: T, fontSize: 13, fontWeight: '600' }}>Tout voir</Text>
                   </TouchableOpacity>
                 </View>
-                {data.upcomingAppointments.slice(0, 5).map(appt => (
+                {data.stats.upcomingAppointments.slice(0, 5).map(appt => (
                   <View key={appt._id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
                     <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#f0fdfa', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                       <Ionicons name="person" size={20} color={T} />

@@ -4,6 +4,7 @@ import path from 'path';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
+import { detectFileKind, safeExtensionFor, IMAGE_KINDS } from '@/lib/fileValidation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,11 +20,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
     }
 
-    // Vérifier le type (images uniquement)
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Le fichier doit être une image' }, { status: 400 });
-    }
-
     // Limite 5 Mo
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: 'La photo ne doit pas dépasser 5 Mo' }, { status: 400 });
@@ -32,9 +28,17 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Générer un nom de fichier unique
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const filename = `doctor_${authUser.userId}_${Date.now()}.${ext}`;
+    // Type réel vérifié par signature binaire (jamais par le Content-Type
+    // déclaré par le client). Le SVG est délibérément exclu : bien que son
+    // Content-Type commence par "image/", il peut embarquer du script et
+    // ce fichier est servi publiquement — voir audit S07.
+    const kind = detectFileKind(buffer);
+    if (!kind || !IMAGE_KINDS.includes(kind)) {
+      return NextResponse.json({ error: 'Le fichier doit être une image (JPEG, PNG, WEBP ou GIF)' }, { status: 400 });
+    }
+
+    // Nom de fichier généré côté serveur, jamais dérivé du nom fourni par le client.
+    const filename = `doctor_${authUser.userId}_${Date.now()}.${safeExtensionFor(kind)}`;
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'doctors');
 
     await mkdir(uploadDir, { recursive: true });

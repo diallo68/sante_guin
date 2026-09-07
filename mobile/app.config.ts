@@ -20,7 +20,9 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
+  // La New Architecture est obligatoire depuis Expo 55 / RN 0.83 (l'ancienne
+  // architecture a été retirée) : `newArchEnabled` n'existe plus dans
+  // ExpoConfig et faisait échouer le typecheck.
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,

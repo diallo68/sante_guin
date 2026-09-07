@@ -7,6 +7,7 @@ import {
   User, Mail, Phone, MapPin, Calendar, Clock,
   Heart, Settings, LogOut, Loader2, AlertCircle, Stethoscope, Pill,
 } from 'lucide-react';
+import { logout } from '@/lib/clientLogout';
 
 interface UserData {
   id: string;
@@ -109,7 +110,7 @@ export default function UserProfilePage() {
   }, [activeTab, user]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await logout();
     router.push('/');
   };
 

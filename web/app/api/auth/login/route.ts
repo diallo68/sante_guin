@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
 import { signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
+import { rateLimit, clientIp } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +15,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Email et mot de passe sont requis' },
         { status: 400 }
+      );
+    }
+
+    // Limite les tentatives par IP (bourrage d'identifiants sur des comptes
+    // variés) et par couple IP+email (attaque ciblée sur un seul compte) —
+    // voir audit S13.
+    const ip = clientIp(req);
+    const perIp = rateLimit(`login:ip:${ip}`, 30, 15 * 60 * 1000);
+    const perAccount = rateLimit(`login:acct:${ip}:${contact.toLowerCase()}`, 10, 15 * 60 * 1000);
+    if (!perIp.allowed || !perAccount.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Réessayez plus tard.' },
+        { status: 429 }
       );
     }
 
@@ -36,10 +50,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (user.isSuspended) {
+      return NextResponse.json(
+        { error: 'Ce compte a été suspendu. Contactez le support.' },
+        { status: 403 }
+      );
+    }
+
+    if (!user.isVerified) {
+      return NextResponse.json(
+        {
+          error: 'Compte non vérifié. Veuillez confirmer votre email.',
+          userId: user._id.toString(),
+          requiresVerification: true,
+        },
+        { status: 403 }
+      );
+    }
+
     const token = await signToken({
       userId: user._id.toString(),
       email: user.email || '',
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
 
     const response = NextResponse.json({

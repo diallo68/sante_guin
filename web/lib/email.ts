@@ -1,3 +1,5 @@
+import { escapeHtml } from './htmlEscape';
+
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@mondocteur.org';
 const FROM_NAME = 'Mondocteur';
@@ -58,13 +60,13 @@ export function emailAppointmentConfirmation(params: {
   </div>
   <div style="background:white;padding:24px;border-radius:8px;border:1px solid #e5e7eb;">
     <h2 style="color:#1f2937;margin-top:0;">Rendez-vous confirmé ✅</h2>
-    <p style="color:#6b7280;">Bonjour <strong>${params.patientFirstName}</strong>,</p>
+    <p style="color:#6b7280;">Bonjour <strong>${escapeHtml(params.patientFirstName)}</strong>,</p>
     <p style="color:#6b7280;">Votre rendez-vous a bien été enregistré :</p>
     <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:4px 0;color:#1f2937;"><strong>Médecin :</strong> ${params.doctorName}</p>
-      <p style="margin:4px 0;color:#1f2937;"><strong>Date :</strong> ${params.date}</p>
-      <p style="margin:4px 0;color:#1f2937;"><strong>Heure :</strong> ${params.time}</p>
-      ${params.reason ? `<p style="margin:4px 0;color:#1f2937;"><strong>Motif :</strong> ${params.reason}</p>` : ''}
+      <p style="margin:4px 0;color:#1f2937;"><strong>Médecin :</strong> ${escapeHtml(params.doctorName)}</p>
+      <p style="margin:4px 0;color:#1f2937;"><strong>Date :</strong> ${escapeHtml(params.date)}</p>
+      <p style="margin:4px 0;color:#1f2937;"><strong>Heure :</strong> ${escapeHtml(params.time)}</p>
+      ${params.reason ? `<p style="margin:4px 0;color:#1f2937;"><strong>Motif :</strong> ${escapeHtml(params.reason)}</p>` : ''}
     </div>
     <p style="color:#6b7280;">Vous pouvez suivre votre rendez-vous et échanger des messages avec votre médecin depuis votre espace patient.</p>
     <div style="text-align:center;margin-top:24px;">
@@ -98,10 +100,10 @@ export function emailNewMessage(params: {
   </div>
   <div style="background:white;padding:24px;border-radius:8px;border:1px solid #e5e7eb;">
     <h2 style="color:#1f2937;margin-top:0;">Nouveau message 💬</h2>
-    <p style="color:#6b7280;">Bonjour <strong>${params.recipientName}</strong>,</p>
-    <p style="color:#6b7280;"><strong>${params.senderName}</strong> vous a envoyé un message :</p>
+    <p style="color:#6b7280;">Bonjour <strong>${escapeHtml(params.recipientName)}</strong>,</p>
+    <p style="color:#6b7280;"><strong>${escapeHtml(params.senderName)}</strong> vous a envoyé un message :</p>
     <div style="background:#f3f4f6;border-left:4px solid #0d9488;padding:12px 16px;border-radius:4px;margin:16px 0;color:#374151;font-style:italic;">
-      "${params.preview.length > 200 ? params.preview.slice(0, 200) + '…' : params.preview}"
+      "${escapeHtml(params.preview.length > 200 ? params.preview.slice(0, 200) + '…' : params.preview)}"
     </div>
     <div style="text-align:center;margin-top:24px;">
       <a href="${link}" style="background:#0d9488;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
@@ -135,16 +137,16 @@ export function emailAppointmentStatusChange(params: {
     <h2 style="color:#1f2937;margin-top:0;">
       ${isConfirmed ? 'Rendez-vous confirmé ✅' : 'Rendez-vous annulé ❌'}
     </h2>
-    <p style="color:#6b7280;">Bonjour <strong>${params.patientFirstName}</strong>,</p>
+    <p style="color:#6b7280;">Bonjour <strong>${escapeHtml(params.patientFirstName)}</strong>,</p>
     <p style="color:#6b7280;">
       ${isConfirmed
-        ? `Le Dr. <strong>${params.doctorName}</strong> a confirmé votre rendez-vous.`
-        : `Le Dr. <strong>${params.doctorName}</strong> a annulé votre rendez-vous. Vous pouvez en prendre un nouveau depuis la plateforme.`}
+        ? `Le Dr. <strong>${escapeHtml(params.doctorName)}</strong> a confirmé votre rendez-vous.`
+        : `Le Dr. <strong>${escapeHtml(params.doctorName)}</strong> a annulé votre rendez-vous. Vous pouvez en prendre un nouveau depuis la plateforme.`}
     </p>
     <div style="background:${isConfirmed ? '#f0fdfa' : '#fef2f2'};border:1px solid ${isConfirmed ? '#99f6e4' : '#fecaca'};border-radius:8px;padding:16px;margin:16px 0;">
-      <p style="margin:4px 0;color:#1f2937;"><strong>Médecin :</strong> ${params.doctorName}</p>
-      <p style="margin:4px 0;color:#1f2937;"><strong>Date :</strong> ${params.date}</p>
-      <p style="margin:4px 0;color:#1f2937;"><strong>Heure :</strong> ${params.time}</p>
+      <p style="margin:4px 0;color:#1f2937;"><strong>Médecin :</strong> ${escapeHtml(params.doctorName)}</p>
+      <p style="margin:4px 0;color:#1f2937;"><strong>Date :</strong> ${escapeHtml(params.date)}</p>
+      <p style="margin:4px 0;color:#1f2937;"><strong>Heure :</strong> ${escapeHtml(params.time)}</p>
     </div>
     <div style="text-align:center;margin-top:24px;">
       <a href="https://mondocteur.org/profile" style="background:#0d9488;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">

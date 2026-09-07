@@ -90,6 +90,7 @@ export default function MessagesPage() {
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
   // New conversation modal
   const [showNewConv, setShowNewConv] = useState(false);
@@ -119,20 +120,32 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!selectedId || !convs.length) return;
+    // openConversation met à jour `convs` (nouvelle référence à chaque
+    // appel), ce qui redéclenchait cet effet en boucle infinie tant que
+    // `convs` restait une dépendance. On ignore les re-déclenchements une
+    // fois la conversation déjà active — voir audit B01.
+    if (activeConv?._id === selectedId) return;
     const conv = convs.find(c => c._id === selectedId);
     if (conv) openConversation(conv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, convs]);
+  }, [selectedId, convs, activeConv]);
 
   const openConversation = useCallback(async (conv: Conversation) => {
     setActiveConv(conv);
     setLoadingMsgs(true);
-    const res = await fetch(`/api/conversations/${conv._id}`);
-    const data = await res.json();
-    setMessages(data.messages || []);
-    setLoadingMsgs(false);
-    setConvs(prev => prev.map(c => c._id === conv._id ? { ...c, unreadCount: 0 } : c));
-    router.replace(`/messages?conv=${conv._id}`, { scroll: false });
+    // Sans try/finally, une requête échouée (réseau coupé) laissait le
+    // spinner de chargement affiché indéfiniment — voir audit B26.
+    try {
+      const res = await fetch(`/api/conversations/${conv._id}`);
+      const data = await res.json();
+      setMessages(data.messages || []);
+      setConvs(prev => prev.map(c => c._id === conv._id ? { ...c, unreadCount: 0 } : c));
+      router.replace(`/messages?conv=${conv._id}`, { scroll: false });
+    } catch {
+      setMessages([]);
+    } finally {
+      setLoadingMsgs(false);
+    }
   }, [router]);
 
   useEffect(() => {
@@ -142,21 +155,33 @@ export default function MessagesPage() {
   const sendMessage = async () => {
     if (!text.trim() || !activeConv || sending) return;
     setSending(true);
+    setSendError('');
     const content = text.trim();
     setText('');
-    const res = await fetch(`/api/conversations/${activeConv._id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setMessages(prev => [...prev, data.message]);
-      setConvs(prev => prev.map(c => c._id === activeConv._id
-        ? { ...c, lastMessage: content, lastMessageAt: new Date().toISOString() }
-        : c));
+    // Sans try/finally, un échec réseau laissait le bouton d'envoi bloqué
+    // et le texte déjà effacé perdu pour l'utilisateur — voir audit B26.
+    try {
+      const res = await fetch(`/api/conversations/${activeConv._id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(prev => [...prev, data.message]);
+        setConvs(prev => prev.map(c => c._id === activeConv._id
+          ? { ...c, lastMessage: content, lastMessageAt: new Date().toISOString() }
+          : c));
+      } else {
+        setText(content);
+        setSendError('Message non envoyé. Réessayez.');
+      }
+    } catch {
+      setText(content);
+      setSendError('Message non envoyé. Réessayez.');
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -409,6 +434,9 @@ export default function MessagesPage() {
                         {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                       </button>
                     </div>
+                    {sendError && (
+                      <p className="text-xs text-red-500 mt-1 ml-10">{sendError}</p>
+                    )}
                     <p className="text-xs text-gray-400 mt-1 ml-10">
                       📎 Formats acceptés : PDF, JPG, PNG (max 10 Mo)
                     </p>
