@@ -59,6 +59,12 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      # `pnpm build` échouerait aussi sur une erreur ESLint (ignoreDuringBuilds:
+      # false — voir next.config.js), mais lint séparément donne un retour
+      # plus rapide et plus lisible qu'un échec de build.
+      - name: Lint
+        run: pnpm lint
+
       - name: Build
         run: pnpm build
         env:

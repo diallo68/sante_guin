@@ -4,8 +4,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // ESLint est maintenant configuré (eslint.config.mjs) et ne remonte plus
+  // aucune erreur bloquante sur le code existant (126 avertissements
+  // restants, volontairement non bloquants — voir eslint.config.mjs) : le
+  // build échoue désormais si une régression est introduite — voir audit
+  // section 4 et "ESLint... configurations absentes" section 1.
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   // Les 5 erreurs TypeScript préexistantes (dont B10) sont corrigées ;
   // le build échoue désormais si une régression de typage est introduite,
