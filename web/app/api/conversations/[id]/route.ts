@@ -6,20 +6,8 @@ import Message from '@/models/Message';
 import Doctor from '@/models/Doctor';
 import User from '@/models/User';
 import { sendEmail, emailNewMessage } from '@/lib/email';
-
-async function checkAccess(conv: any, authUser: { userId: string; role: string }) {
-  if (conv.type === 'document') {
-    return conv.participants.some((p: any) => String(p.userId) === authUser.userId);
-  }
-  // Appointment-based
-  const isPatient = String(conv.patientId?._id ?? conv.patientId) === authUser.userId;
-  if (isPatient) return true;
-  if (authUser.role === 'doctor' || authUser.role === 'pharmacist' || authUser.role === 'laboratorist') {
-    const doc = await Doctor.findOne({ userId: authUser.userId }).select('_id').lean();
-    return doc ? String(doc._id) === String(conv.doctorId?._id ?? conv.doctorId) : false;
-  }
-  return false;
-}
+import { checkConversationAccess as checkAccess } from '@/lib/conversationAccess';
+import { signDownloadToken } from '@/lib/downloadToken';
 
 // GET /api/conversations/[id] — messages + mark as read
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,7 +38,28 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     { $addToSet: { readBy: authUser.userId } }
   );
 
-  return NextResponse.json({ conversation: conv, messages });
+  // Les pièces jointes sont servies par une route protégée avec un jeton
+  // signé de courte durée, régénéré à chaque lecture plutôt que persisté
+  // (sinon un lien renvoyé il y a plus de 15 minutes cesserait de fonctionner).
+  const messagesWithFreshTokens = await Promise.all(
+    messages.map(async (msg) => {
+      if (!msg.attachments?.length) return msg;
+      const attachments = await Promise.all(
+        msg.attachments.map(async (att: any) => {
+          const token = await signDownloadToken({
+            docId: msg._id.toString(),
+            ownerId: '',
+            scope: 'conversation-attachment',
+          });
+          const basePath = att.url.split('?')[0];
+          return { ...att, url: `${basePath}?token=${token}` };
+        })
+      );
+      return { ...msg, attachments };
+    })
+  );
+
+  return NextResponse.json({ conversation: conv, messages: messagesWithFreshTokens });
 }
 
 // POST /api/conversations/[id] — send a text message

@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import PatientRecord from '@/models/PatientRecord';
+import { detectFileKind, safeExtensionFor, mimeTypeFor, DOCUMENT_KINDS } from '@/lib/fileValidation';
 
-const ALLOWED_TYPES = [
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-  'application/pdf',
-];
+// Répertoire privé — jamais servi directement par le serveur statique.
+const UPLOAD_DIR = path.join(process.cwd(), 'private-uploads', 'patients');
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,9 +25,6 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: 'Aucun fichier reçu' }, { status: 400 });
     if (!patientId) return NextResponse.json({ error: 'Patient ID requis' }, { status: 400 });
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Type de fichier non autorisé (images ou PDF uniquement)' }, { status: 400 });
-    }
     if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json({ error: 'Fichier trop volumineux (max 10 Mo)' }, { status: 400 });
     }
@@ -39,23 +37,32 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'bin';
-    const filename = `patient_${patientId}_${Date.now()}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'patients');
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
+    // Type réel vérifié par signature binaire, pas par le Content-Type
+    // déclaré par le client (falsifiable) — voir audit S07.
+    const kind = detectFileKind(buffer);
+    if (!kind || !DOCUMENT_KINDS.includes(kind)) {
+      return NextResponse.json({ error: 'Type de fichier non autorisé (images ou PDF uniquement)' }, { status: 400 });
+    }
 
-    const fileUrl = `/uploads/patients/${filename}`;
+    if (!existsSync(UPLOAD_DIR)) await mkdir(UPLOAD_DIR, { recursive: true });
 
+    const storedFilename = `${crypto.randomUUID()}.${safeExtensionFor(kind)}`;
+    await writeFile(path.join(UPLOAD_DIR, storedFilename), buffer);
+
+    // `url` pointe vers la route de téléchargement protégée (auth par
+    // cookie de session — cette fonctionnalité est web uniquement).
     record.documents.push({
-      name: file.name,
-      url: fileUrl,
-      type: file.type,
+      name: file.name || storedFilename,
+      type: mimeTypeFor(kind),
+      storedFilename,
       uploadedAt: new Date(),
-    });
+      url: '',
+    } as any);
+    const created = record.documents[record.documents.length - 1];
+    created.url = `/api/pro/patients/${patientId}/documents/${created._id.toString()}/download`;
     await record.save();
 
-    return NextResponse.json({ document: record.documents[record.documents.length - 1] });
+    return NextResponse.json({ document: created });
   } catch (error) {
     console.error('Upload patient doc error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

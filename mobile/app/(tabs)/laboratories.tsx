@@ -29,32 +29,46 @@ export default function LaboratoriesScreen() {
   const [only24h, setOnly24h] = useState(false);
   const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchLaboratories = async (q = search, h = only24h) => {
+  // Seule la première page était jamais chargée — voir audit B22.
+  const fetchLaboratories = async (q = search, h = only24h, pageNum = 1, append = false) => {
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | number> = { page: pageNum };
       if (q.trim()) params.search = q.trim();
       if (h) params.open24h = 'true';
       const res = await api.get('/laboratories', { params });
-      setLaboratories(res.data.laboratories || []);
+      const newItems: Laboratory[] = res.data.laboratories || [];
+      setLaboratories(prev => append ? [...prev, ...newItems] : newItems);
+      setPage(pageNum);
+      setHasMore(pageNum < (res.data.pages || 1));
     } catch {
-      setLaboratories([]);
+      if (!append) setLaboratories([]);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    const t = setTimeout(() => fetchLaboratories(search, only24h), 400);
+    const t = setTimeout(() => fetchLaboratories(search, only24h, 1, false), 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  useEffect(() => { fetchLaboratories(search, only24h); }, [only24h]);
+  useEffect(() => { fetchLaboratories(search, only24h, 1, false); }, [only24h]);
 
-  const onRefresh = () => { setRefreshing(true); fetchLaboratories(); };
+  const onRefresh = () => { setRefreshing(true); fetchLaboratories(search, only24h, 1, false); };
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore || loading) return;
+    setLoadingMore(true);
+    fetchLaboratories(search, only24h, page + 1, true);
+  };
 
   const renderLaboratory = ({ item }: { item: Laboratory }) => (
     <TouchableOpacity
@@ -152,6 +166,9 @@ export default function LaboratoriesScreen() {
           contentContainerStyle={{ padding: 16 }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={TEAL} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={loadingMore ? <View style={{ paddingVertical: 20 }}><ActivityIndicator color={TEAL} /></View> : null}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', paddingTop: 60 }}>
               <Ionicons name="flask-outline" size={48} color="#d1d5db" />

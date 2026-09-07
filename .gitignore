@@ -137,3 +137,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Fichiers uploadés (jamais dans public/ pour les documents privés — voir audit S06)
+web/private-uploads/
+web/public/uploads/

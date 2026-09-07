@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import Link from 'next/link';
 import {
   Building2, MapPin, Phone, Mail, Clock, Users, Package,
@@ -42,7 +42,7 @@ const TYPE_LABELS: Record<string, string> = {
   laboratoire: 'Laboratoire d\'analyses',
 };
 
-const TYPE_ICONS: Record<string, JSX.Element> = {
+const TYPE_ICONS: Record<string, ReactElement> = {
   medecin_independant: <Stethoscope className="w-6 h-6" />,
   cabinet: <Stethoscope className="w-6 h-6" />,
   clinique: <Building2 className="w-6 h-6" />,

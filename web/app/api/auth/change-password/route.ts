@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
-import { getAuthUser } from '@/lib/auth';
+import { getAuthUser, signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
 
 export async function PUT(req: NextRequest) {
@@ -33,9 +33,29 @@ export async function PUT(req: NextRequest) {
     }
 
     user.passwordHash = await bcrypt.hash(newPassword, 12);
+    // Invalide immédiatement tous les tokens déjà émis pour ce compte
+    // (protection en cas de mot de passe compromis).
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await user.save();
 
-    return NextResponse.json({ message: 'Mot de passe modifié avec succès' });
+    // Réémet un token à jour pour la session courante, sinon l'utilisateur
+    // se retrouverait déconnecté juste après avoir changé son mot de passe.
+    const token = await signToken({
+      userId: user._id.toString(),
+      email: user.email || '',
+      role: user.role,
+      tokenVersion: user.tokenVersion,
+    });
+
+    const response = NextResponse.json({ message: 'Mot de passe modifié avec succès', token });
+    response.cookies.set(JWT_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+    return response;
   } catch (error) {
     console.error('Change password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

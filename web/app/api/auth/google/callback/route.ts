@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { signToken, JWT_COOKIE } from '@/lib/auth';
+import { OAUTH_STATE_COOKIE } from '@/lib/oauthState';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
@@ -16,6 +17,20 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code');
   if (!code) {
     return NextResponse.redirect(`${appUrl}/auth/login?error=oauth_cancelled`);
+  }
+
+  // Le `state` renvoyé par Google doit correspondre à celui émis dans le
+  // cookie httpOnly au départ du flux : sans ce contrôle, un attaquant
+  // pouvait faire ouvrir à une victime un lien de callback initié pour un
+  // autre compte (CSRF de connexion) — voir audit S15.
+  const returnedState = req.nextUrl.searchParams.get('state');
+  const expectedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
+  const stateValid = !!returnedState && !!expectedState && returnedState === expectedState;
+
+  if (!stateValid) {
+    const response = NextResponse.redirect(`${appUrl}/auth/login?error=oauth_invalid_state`);
+    response.cookies.delete(OAUTH_STATE_COOKIE);
+    return response;
   }
 
   try {
@@ -76,6 +91,8 @@ export async function GET(req: NextRequest) {
         role: 'patient',
         isVerified: true,
       });
+    } else if (user.isSuspended) {
+      return NextResponse.redirect(`${appUrl}/auth/login?error=account_suspended`);
     }
 
     // Issue JWT
@@ -83,6 +100,7 @@ export async function GET(req: NextRequest) {
       userId: user._id.toString(),
       email: user.email || '',
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
 
     const response = NextResponse.redirect(
@@ -98,6 +116,7 @@ export async function GET(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
+    response.cookies.delete(OAUTH_STATE_COOKIE);
 
     return response;
   } catch (err) {

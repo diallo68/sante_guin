@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Appointment from '@/models/Appointment';
@@ -8,9 +8,11 @@ import Laboratory from '@/models/Laboratory';
 
 const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
 
-export async function GET() {
+// `getAuthUser()` sans `req` ne lisait que le cookie web, jamais le Bearer
+// mobile — voir audit B11.
+export async function GET(req: NextRequest) {
   try {
-    const authUser = await getAuthUser();
+    const authUser = await getAuthUser(req);
     if (!authUser || !PRO_ROLES.includes(authUser.role)) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
@@ -22,6 +24,9 @@ export async function GET() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Sans borne supérieure, "ce mois-ci" incluait aussi tous les
+    // rendez-vous futurs déjà pris pour les mois suivants — voir audit B28.
+    const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
     // ── Médecin ──
     if (authUser.role === 'doctor') {
@@ -43,7 +48,7 @@ export async function GET() {
           }),
           Appointment.countDocuments({
             doctorId: doctor._id,
-            date: { $gte: startOfMonth },
+            date: { $gte: startOfMonth, $lt: startOfNextMonth },
             status: { $ne: 'cancelled' },
           }),
           Appointment.countDocuments({ doctorId: doctor._id, status: 'pending' }),

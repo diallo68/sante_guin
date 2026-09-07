@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Appointment from '@/models/Appointment';
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(req);
@@ -46,73 +49,112 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connectDB();
-
-    const conflict = await Appointment.findOne({
-      doctorId,
-      date: new Date(date),
-      time,
-      status: { $in: ['pending', 'confirmed'] },
-    });
-
-    if (conflict) {
-      return NextResponse.json(
-        { error: 'Ce créneau est déjà réservé' },
-        { status: 409 }
-      );
+    if (typeof time !== 'string' || !TIME_RE.test(time)) {
+      return NextResponse.json({ error: 'Heure invalide' }, { status: 400 });
     }
 
-    const appointment = await Appointment.create({
-      patientId: authUser.userId,
-      doctorId,
-      date: new Date(date),
-      time,
-      reason,
-    });
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: 'Date invalide' }, { status: 400 });
+    }
 
-    // Créer la conversation + message initial (non-bloquant)
-    Promise.all([
-      User.findById(authUser.userId).select('firstName lastName email').lean(),
-      Doctor.findById(doctorId).select('firstName lastName').lean(),
-    ]).then(async ([patient, doctor]) => {
-      if (patient && doctor) {
-        const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
+    // Comparaison par jour calendaire (pas par horodatage exact) pour
+    // éviter les faux positifs liés au fuseau horaire du navigateur —
+    // voir audit B04/B27.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const requestedDay = new Date(parsedDate);
+    requestedDay.setHours(0, 0, 0, 0);
+    if (requestedDay < today) {
+      return NextResponse.json({ error: 'La date du rendez-vous est déjà passée' }, { status: 400 });
+    }
+
+    await connectDB();
+
+    // Le médecin doit exister et être disponible : sans ce contrôle, un
+    // rendez-vous pouvait être créé pour un identifiant inexistant ou un
+    // médecin explicitement indisponible — voir audit B04.
+    const doctor = await Doctor.findById(doctorId).select('firstName lastName isAvailable').lean();
+    if (!doctor) {
+      return NextResponse.json({ error: 'Médecin introuvable' }, { status: 404 });
+    }
+    if (doctor.isAvailable === false) {
+      return NextResponse.json({ error: 'Ce médecin n\'accepte pas de nouveaux rendez-vous actuellement' }, { status: 409 });
+    }
+
+    // Rendez-vous + conversation + premier message créés en une seule
+    // transaction : sans ça, un rendez-vous pouvait réussir sans que la
+    // conversation associée soit jamais créée (erreur avalée par le bloc
+    // non-bloquant) — voir audit B18. La contrainte unique sur
+    // {doctorId, date, time} rend la double réservation concurrente
+    // impossible même en cas de requêtes simultanées — voir audit B03.
+    const patient = await User.findById(authUser.userId).select('firstName lastName email').lean();
+    if (!patient) {
+      return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
+    }
+
+    const session = await mongoose.startSession();
+    let appointment;
+    try {
+      await session.withTransaction(async () => {
+        const [createdAppointment] = await Appointment.create(
+          [{ patientId: authUser.userId, doctorId, date: parsedDate, time, reason }],
+          { session }
+        );
+        appointment = createdAppointment;
+
+        const dateFormatted = parsedDate.toLocaleDateString('fr-FR', {
           weekday: 'long', day: 'numeric', month: 'long',
         });
         const firstMessage = `Bonjour Dr. ${doctor.firstName} ${doctor.lastName},\n\nJe souhaite un rendez-vous le ${dateFormatted} à ${time}.${reason ? `\n\nMotif : ${reason}` : ''}\n\nCordialement,\n${patient.firstName} ${patient.lastName}`;
 
-        const conversation = await Conversation.create({
-          doctorId,
-          patientId: authUser.userId,
-          appointmentId: appointment._id,
-          lastMessage: firstMessage.split('\n')[0],
-          lastMessageAt: new Date(),
-        });
+        const [conversation] = await Conversation.create(
+          [{
+            type: 'appointment',
+            doctorId,
+            patientId: authUser.userId,
+            appointmentId: createdAppointment._id,
+            lastMessage: firstMessage.split('\n')[0],
+            lastMessageAt: new Date(),
+          }],
+          { session }
+        );
 
-        await Message.create({
-          conversationId: conversation._id,
-          senderId: authUser.userId,
-          senderRole: 'patient',
-          content: firstMessage,
-          readBy: [authUser.userId],
-        });
-
-        // Email confirmation au patient
-        if (patient.email) {
-          const dateFormatted2 = new Date(date).toLocaleDateString('fr-FR', {
-            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-          });
-          const tpl = emailAppointmentConfirmation({
-            patientFirstName: patient.firstName,
-            doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
-            date: dateFormatted2,
-            time,
-            reason,
-          });
-          sendEmail({ to: patient.email, ...tpl }).catch(() => {});
-        }
+        await Message.create(
+          [{
+            conversationId: conversation._id,
+            senderId: authUser.userId,
+            senderRole: 'patient',
+            content: firstMessage,
+            readBy: [authUser.userId],
+          }],
+          { session }
+        );
+      });
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        return NextResponse.json({ error: 'Ce créneau est déjà réservé' }, { status: 409 });
       }
-    }).catch(() => {});
+      throw err;
+    } finally {
+      await session.endSession();
+    }
+
+    // Email de confirmation (non-bloquant : un échec d'envoi ne doit pas
+    // annuler un rendez-vous déjà confirmé en base).
+    if (patient.email) {
+      const dateFormatted2 = parsedDate.toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      });
+      const tpl = emailAppointmentConfirmation({
+        patientFirstName: patient.firstName,
+        doctorName: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+        date: dateFormatted2,
+        time,
+        reason,
+      });
+      sendEmail({ to: patient.email, ...tpl }).catch(() => {});
+    }
 
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {

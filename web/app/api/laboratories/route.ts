@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Laboratory from '@/models/Laboratory';
+import { escapeRegex, parsePagination } from '@/lib/queryHelpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,18 +16,17 @@ export async function GET(req: NextRequest) {
     const query: any = {};
     if (city) query.city = city;
     if (open24h === 'true') query.isOpen24h = true;
-    if (analysis) query.analyses = { $regex: analysis, $options: 'i' };
+    if (analysis) query.analyses = { $regex: escapeRegex(analysis), $options: 'i' };
     if (search) {
+      const pattern = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { address: { $regex: search, $options: 'i' } },
-        { analyses: { $regex: search, $options: 'i' } },
+        { name: { $regex: pattern, $options: 'i' } },
+        { address: { $regex: pattern, $options: 'i' } },
+        { analyses: { $regex: pattern, $options: 'i' } },
       ];
     }
 
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-    const limit = Math.min(50, parseInt(searchParams.get('limit') || '12'));
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(searchParams, { defaultLimit: 12, maxLimit: 50 });
 
     const [laboratories, total] = await Promise.all([
       Laboratory.find(query)

@@ -81,41 +81,54 @@ export async function PATCH(req: NextRequest) {
   if (status) update.status = status;
   if (adminNote !== undefined) update.adminNote = adminNote;
 
-  const updated = await SubscriptionRequest.findByIdAndUpdate(id, update, { new: true });
   const statusChanged = status && status !== previous.status;
 
   // ── Activation : mettre à jour le profil Pro en DB ──
-  if (statusChanged && status === 'active') {
-    try {
-      // Trouver l'utilisateur par email ou téléphone
-      const query: any[] = [];
-      if (updated.email) query.push({ email: updated.email });
-      if (updated.telephone) query.push({ phone: updated.telephone });
+  // Tentée à chaque appel avec status === 'active', pas seulement quand le
+  // statut change : marquer la demande "active" AVANT de savoir si le
+  // profil a bien été mis à jour laissait un nouvel essai sans effet après
+  // un premier échec, puisque `statusChanged` devenait alors faux —
+  // voir audit B20. On échoue maintenant explicitement plutôt que de
+  // répondre un succès silencieux.
+  if (status === 'active') {
+    const query: any[] = [];
+    if (previous.email) query.push({ email: previous.email });
+    if (previous.telephone) query.push({ phone: previous.telephone });
 
-      const targetUser = query.length > 0
-        ? await User.findOne({ $or: query })
-        : null;
+    const targetUser = query.length > 0 ? await User.findOne({ $or: query }) : null;
+    if (!targetUser) {
+      return NextResponse.json(
+        { error: 'Aucun compte utilisateur ne correspond à cet email/téléphone.' },
+        { status: 409 }
+      );
+    }
 
-      if (targetUser) {
-        const expiresAt = getExpiryDate(updated.planName);
-        const profileUpdate = {
-          subscriptionStatus: 'active',
-          subscriptionPlan: updated.planName,
-          subscriptionExpiresAt: expiresAt,
-        };
+    const expiresAt = getExpiryDate(previous.planName);
+    const profileUpdate = {
+      subscriptionStatus: 'active',
+      subscriptionPlan: previous.planName,
+      subscriptionExpiresAt: expiresAt,
+    };
 
-        if (targetUser.role === 'doctor') {
-          await Doctor.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
-        } else if (targetUser.role === 'pharmacist') {
-          await Pharmacy.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
-        } else if (targetUser.role === 'laboratorist') {
-          await Laboratory.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
-        }
-      }
-    } catch (e) {
-      console.error('Erreur activation profil Pro:', e);
+    let profileDoc = null;
+    if (targetUser.role === 'doctor') {
+      profileDoc = await Doctor.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
+    } else if (targetUser.role === 'pharmacist') {
+      profileDoc = await Pharmacy.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
+    } else if (targetUser.role === 'laboratorist') {
+      profileDoc = await Laboratory.findOneAndUpdate({ userId: targetUser._id }, profileUpdate);
+    }
+
+    if (!profileDoc) {
+      return NextResponse.json(
+        { error: 'Profil professionnel introuvable pour ce compte.' },
+        { status: 409 }
+      );
     }
   }
+
+  const updated = await SubscriptionRequest.findByIdAndUpdate(id, update, { new: true });
+  if (!updated) return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 });
 
   // ── Résiliation : désactiver le profil ──
   if (statusChanged && status === 'rejected') {

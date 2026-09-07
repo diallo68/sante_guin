@@ -22,6 +22,12 @@ export async function connectDB() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
+    }).catch((err) => {
+      // Sans ce catch, une promesse rejetée restait en cache indéfiniment :
+      // le premier échec de connexion empêchait toute nouvelle tentative
+      // jusqu'au redémarrage du processus — voir audit B07.
+      cached.promise = null;
+      throw err;
     });
   }
 

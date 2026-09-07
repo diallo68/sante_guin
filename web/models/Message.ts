@@ -5,6 +5,10 @@ export interface IAttachment {
   url: string;
   type: string;
   size: number;
+  // Nom sur disque dans le répertoire privé. Absent pour les pièces jointes
+  // envoyées avant le passage au stockage privé (voir audit S06) — la route
+  // de téléchargement retombe alors sur l'ancien fichier public.
+  storedFilename?: string;
 }
 
 export interface IMessage extends Document {
@@ -25,6 +29,7 @@ const AttachmentSchema = new Schema<IAttachment>(
     url: { type: String, required: true },
     type: { type: String, required: true },
     size: { type: Number, required: true },
+    storedFilename: { type: String },
   },
   { _id: false }
 );

@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
 import { sendOTPEmail } from '@/lib/mailer';
+import { generateOTP, hashOTP } from '@/lib/otp';
+import { rateLimit, clientIp } from '@/lib/rateLimit';
 
-function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function hashOTP(otp: string): string {
-  return crypto.createHash('sha256').update(otp).digest('hex');
-}
+// Seuls ces rôles peuvent être demandés depuis l'inscription publique.
+// 'admin' est délibérément exclu : les comptes administrateurs sont créés
+// par une procédure distincte et protégée (jamais via ce endpoint public).
+const PUBLIC_SIGNUP_ROLES = ['patient', 'doctor', 'pharmacist', 'laboratorist'] as const;
+type PublicSignupRole = (typeof PUBLIC_SIGNUP_ROLES)[number];
 
 export async function POST(req: NextRequest) {
   try {
+    // Limite les inscriptions en masse (spam, hachage bcrypt coûteux
+    // répété) depuis une même IP — voir audit S13.
+    const signupLimit = rateLimit(`signup:ip:${clientIp(req)}`, 10, 60 * 60 * 1000);
+    if (!signupLimit.allowed) {
+      return NextResponse.json({ error: 'Trop de tentatives. Réessayez plus tard.' }, { status: 429 });
+    }
+
     const body = await req.json();
     const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName } = body;
 
@@ -27,6 +33,14 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (typeof role !== 'string' || !PUBLIC_SIGNUP_ROLES.includes(role as PublicSignupRole)) {
+      return NextResponse.json(
+        { error: 'Rôle invalide' },
+        { status: 400 }
+      );
+    }
+    const validatedRole = role as PublicSignupRole;
 
     if (!email) {
       return NextResponse.json(
@@ -62,14 +76,14 @@ export async function POST(req: NextRequest) {
       lastName,
       email,
       passwordHash,
-      role,
+      role: validatedRole,
       isVerified: false,
       otpCode: hashOTP(otp),
       otpExpiry,
     });
 
     // Créer le profil pro selon le rôle
-    if (role === 'doctor') {
+    if (validatedRole === 'doctor') {
       await Doctor.create({
         userId: user._id,
         firstName,
@@ -78,7 +92,7 @@ export async function POST(req: NextRequest) {
         email,
         city: location || 'Conakry',
       });
-    } else if (role === 'pharmacist') {
+    } else if (validatedRole === 'pharmacist') {
       await Pharmacy.create({
         userId: user._id,
         name: pharmacyName || `Pharmacie ${lastName}`,
@@ -86,7 +100,7 @@ export async function POST(req: NextRequest) {
         city: location || 'Conakry',
         address: location || 'Conakry',
       });
-    } else if (role === 'laboratorist') {
+    } else if (validatedRole === 'laboratorist') {
       await Laboratory.create({
         userId: user._id,
         name: laboratoryName || `Laboratoire ${lastName}`,

@@ -22,7 +22,6 @@ export default function PWAProvider() {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [showSyncBanner, setShowSyncBanner] = useState(false);
-  const [syncQueue, setSyncQueue] = useState<any[]>([]);
   const [isPro, setIsPro] = useState(false);
   const lastSnapshot = useRef<string | null>(null);
   const router = useRouter();
@@ -64,10 +63,18 @@ export default function PWAProvider() {
         .then(reg => {
           console.log('[PWA] Service Worker enregistré:', reg.scope);
 
-          // Écouter les messages du SW (file d'attente offline)
+          // Écouter les messages du SW (file d'attente offline). Écriture
+          // directe dans localStorage plutôt que via un state React
+          // ré-accumulé à chaque événement : l'ancienne version rejouait
+          // tout l'historique de la session à chaque nouvelle entrée,
+          // dupliquant la file (3 événements produisaient 6 entrées) —
+          // voir audit B05.
           navigator.serviceWorker.addEventListener('message', event => {
             if (event.data?.type === 'QUEUE_REQUEST') {
-              setSyncQueue(prev => [...prev, event.data.entry]);
+              try {
+                const existing = JSON.parse(localStorage.getItem('mondocteur-sync-queue') || '[]');
+                localStorage.setItem('mondocteur-sync-queue', JSON.stringify([...existing, event.data.entry]));
+              } catch {}
             }
             if (event.data?.type === 'SYNC_QUEUE') {
               flushQueue();
@@ -131,7 +138,6 @@ export default function PWAProvider() {
     }
 
     localStorage.setItem('mondocteur-sync-queue', JSON.stringify(remaining));
-    setSyncQueue(remaining);
 
     setTimeout(() => setShowSyncBanner(false), 3000);
   };
@@ -143,14 +149,6 @@ export default function PWAProvider() {
       if (!dismissed) setShowInstallBanner(true);
     }
   }, [isPro, installPrompt]);
-
-  // Sauvegarder la queue dans localStorage
-  useEffect(() => {
-    if (syncQueue.length > 0) {
-      const existing = JSON.parse(localStorage.getItem('mondocteur-sync-queue') || '[]');
-      localStorage.setItem('mondocteur-sync-queue', JSON.stringify([...existing, ...syncQueue]));
-    }
-  }, [syncQueue]);
 
   const handleInstall = async () => {
     if (!installPrompt) return;

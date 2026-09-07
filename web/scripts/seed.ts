@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 
@@ -8,6 +9,25 @@ dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 const MONGODB_URI = process.env.MONGODB_URI!;
 if (!MONGODB_URI) {
   console.error('MONGODB_URI manquant dans .env.local');
+  process.exit(1);
+}
+
+// Ce script insère des données de démonstration et ne doit jamais toucher
+// une base réelle — voir audit S14. Deux garde-fous indépendants, aucun
+// n'étant infaillible seul (mauvais .env.local, NODE_ENV non défini en
+// local) :
+// 1. Refus si NODE_ENV=production.
+// 2. L'opérateur doit confirmer explicitement le nom de la base ciblée.
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ Seed refusé : NODE_ENV=production.');
+  process.exit(1);
+}
+
+const dbName = MONGODB_URI.match(/\/([^/?]+)(\?|$)/)?.[1] || '';
+if (!process.env.SEED_CONFIRM_DB || process.env.SEED_CONFIRM_DB !== dbName) {
+  console.error(
+    `❌ Seed refusé : définissez SEED_CONFIRM_DB="${dbName}" pour confirmer explicitement que c'est bien la base de test visée.`
+  );
   process.exit(1);
 }
 
@@ -66,22 +86,23 @@ async function seed() {
   const Pharmacy = mongoose.models.Pharmacy || mongoose.model('Pharmacy', PharmacySchema);
   const Laboratory = mongoose.models.Laboratory || mongoose.model('Laboratory', LaboratorySchema);
 
-  // Nettoyer les collections
-  await Doctor.deleteMany({});
-  await Pharmacy.deleteMany({});
-  await Laboratory.deleteMany({});
-  console.log('🗑️  Collections nettoyées');
-
-  // Créer un compte médecin de test
-  const passwordHash = await bcrypt.hash('medecin123', 12);
+  // Chaque enregistrement est upserté par sa clé métier plutôt qu'un
+  // deleteMany() global suivi d'un insertMany() : une exécution répétée ne
+  // détruit plus les données créées entre deux exécutions (rendez-vous,
+  // avis, modifications manuelles de test) — seed idempotent, voir audit S14.
   let doctorUser = await User.findOne({ email: 'docteur@guineesante.gn' });
   if (!doctorUser) {
+    // Mot de passe aléatoire à chaque exécution : jamais de valeur fixe
+    // journalisée dans le code source — voir audit S14.
+    const generatedPassword = crypto.randomBytes(9).toString('base64url');
+    const passwordHash = await bcrypt.hash(generatedPassword, 12);
     doctorUser = await User.create({
       firstName: 'Ahmed', lastName: 'Diallo',
       email: 'docteur@guineesante.gn',
       passwordHash, role: 'doctor', isVerified: true,
     });
-    console.log('👨‍⚕️  Compte médecin créé : docteur@guineesante.gn / medecin123');
+    console.log(`👨‍⚕️  Compte médecin créé : docteur@guineesante.gn / ${generatedPassword}`);
+    console.log('   (mot de passe généré aléatoirement, non stocké ailleurs — notez-le maintenant)');
   }
 
   // ---- Médecins ----
@@ -192,8 +213,10 @@ async function seed() {
     },
   ];
 
-  await Doctor.insertMany(doctors);
-  console.log(`✅ ${doctors.length} médecins ajoutés`);
+  for (const doctor of doctors) {
+    await Doctor.findOneAndUpdate({ email: doctor.email } as any, doctor, { upsert: true, setDefaultsOnInsert: true } as any);
+  }
+  console.log(`✅ ${doctors.length} médecins upsertés`);
 
   // ---- Pharmacies ----
   const pharmacies = [
@@ -258,8 +281,13 @@ async function seed() {
     },
   ];
 
-  await Pharmacy.insertMany(pharmacies);
-  console.log(`✅ ${pharmacies.length} pharmacies ajoutées`);
+  // Certaines fiches n'ont pas d'email : nom + ville sert alors de clé
+  // d'upsert de repli.
+  for (const pharmacy of pharmacies) {
+    const key = pharmacy.email ? { email: pharmacy.email } : { name: pharmacy.name, city: pharmacy.city };
+    await Pharmacy.findOneAndUpdate(key as any, pharmacy, { upsert: true, setDefaultsOnInsert: true } as any);
+  }
+  console.log(`✅ ${pharmacies.length} pharmacies upsertées`);
 
   // ---- Laboratoires ----
   const laboratories = [
@@ -313,15 +341,13 @@ async function seed() {
     },
   ];
 
-  await Laboratory.insertMany(laboratories);
-  console.log(`✅ ${laboratories.length} laboratoires ajoutés`);
+  for (const laboratory of laboratories) {
+    const key = laboratory.email ? { email: laboratory.email } : { name: laboratory.name, city: laboratory.city };
+    await Laboratory.findOneAndUpdate(key as any, laboratory, { upsert: true, setDefaultsOnInsert: true } as any);
+  }
+  console.log(`✅ ${laboratories.length} laboratoires upsertés`);
 
   console.log('\n🎉 Seed terminé avec succès !');
-  console.log('─────────────────────────────────');
-  console.log('Comptes de test créés :');
-  console.log('  Patient  : test@guineesante.gn / motdepasse123');
-  console.log('  Médecin  : docteur@guineesante.gn / medecin123');
-  console.log('─────────────────────────────────');
 
   await mongoose.disconnect();
   process.exit(0);

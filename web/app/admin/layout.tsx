@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, Briefcase, Calendar,
   LogOut, Menu, X, ShieldCheck, UserCircle, Bell,
 } from 'lucide-react';
+import { logout } from '@/lib/clientLogout';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(true);
@@ -33,7 +34,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await logout();
     router.push('/auth/login');
   };
 

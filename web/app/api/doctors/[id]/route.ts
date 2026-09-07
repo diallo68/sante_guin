@@ -4,11 +4,12 @@ import Doctor from '@/models/Doctor';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await connectDB();
-    const doctor = await Doctor.findById(params.id).lean();
+    const doctor = await Doctor.findById(id).lean();
     if (!doctor) return NextResponse.json({ error: 'Médecin introuvable' }, { status: 404 });
     return NextResponse.json({ doctor });
   } catch {

@@ -4,14 +4,22 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Search, MapPin, Clock, DollarSign, Globe, ChevronDown } from 'lucide-react';
 
+// Mêmes valeurs que la liste utilisée par /doctors (et par les comptes
+// médecins à l'inscription) — le formulaire envoyait auparavant des slugs
+// minuscules (`cardiologue`) qui ne correspondaient jamais à la valeur
+// réelle stockée (`Cardiologue`), rendant le filtre systématiquement
+// vide — voir audit B21.
+const SPECIALTIES = [
+  'Cardiologue', 'Médecin généraliste', 'Dermatologue', 'Pédiatre',
+  'Orthopédiste', 'Ophtalmologue', 'ORL', 'Neurologue',
+];
+
 export default function DoctorsSearchPage() {
   const [formData, setFormData] = useState({
     specialty: '',
     location: '',
-    maxDistance: 10,
     minRating: 4,
     maxPrice: 100000,
-    consultationType: 'all',
     language: '',
     availability: 'all',
   });
@@ -69,14 +77,7 @@ export default function DoctorsSearchPage() {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                 >
                   <option value="">Toutes les spécialités</option>
-                  <option value="cardiologue">Cardiologue</option>
-                  <option value="generaliste">Généraliste</option>
-                  <option value="dermatologue">Dermatologue</option>
-                  <option value="pediatre">Pédiatre</option>
-                  <option value="orthopediste">Orthopédiste</option>
-                  <option value="ophtalmologue">Ophtalmologue</option>
-                  <option value="orl">ORL</option>
-                  <option value="neurologie">Neurologie</option>
+                  {SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
@@ -95,22 +96,6 @@ export default function DoctorsSearchPage() {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                 />
               </div>
-            </div>
-
-            {/* Distance */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Distance maximale : <span className="text-blue-600">{formData.maxDistance} km</span>
-              </label>
-              <input
-                type="range"
-                name="maxDistance"
-                min="1"
-                max="50"
-                value={formData.maxDistance}
-                onChange={handleChange}
-                className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
             </div>
 
             {/* Advanced Filters Toggle */}
@@ -161,24 +146,6 @@ export default function DoctorsSearchPage() {
                   />
                 </div>
 
-                {/* Consultation Type */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Type de consultation
-                  </label>
-                  <select
-                    name="consultationType"
-                    value={formData.consultationType}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="all">Tous</option>
-                    <option value="online">En ligne</option>
-                    <option value="physical">Physique</option>
-                    <option value="both">Les deux</option>
-                  </select>
-                </div>
-
                 {/* Language */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -192,13 +159,15 @@ export default function DoctorsSearchPage() {
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                   >
                     <option value="">Toutes les langues</option>
-                    <option value="french">Français</option>
-                    <option value="english">Anglais</option>
-                    <option value="arabic">Arabe</option>
+                    <option value="Français">Français</option>
+                    <option value="Anglais">Anglais</option>
+                    <option value="Arabe">Arabe</option>
                   </select>
                 </div>
 
-                {/* Availability */}
+                {/* Availability — pas de créneaux réels par jour dans ce
+                    système (voir audit B04) : seul un filtre "disponible
+                    actuellement" est réellement exploitable côté API. */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Clock className="w-4 h-4 inline mr-2" />
@@ -211,9 +180,7 @@ export default function DoctorsSearchPage() {
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
                   >
                     <option value="all">Tous</option>
-                    <option value="today">Aujourd'hui</option>
-                    <option value="tomorrow">Demain</option>
-                    <option value="week">Cette semaine</option>
+                    <option value="available">Disponible actuellement</option>
                   </select>
                 </div>
               </div>
@@ -234,10 +201,8 @@ export default function DoctorsSearchPage() {
                   setFormData({
                     specialty: '',
                     location: '',
-                    maxDistance: 10,
                     minRating: 4,
                     maxPrice: 100000,
-                    consultationType: 'all',
                     language: '',
                     availability: 'all',
                   });
@@ -254,9 +219,8 @@ export default function DoctorsSearchPage() {
             <h3 className="font-bold text-gray-900 mb-2">💡 Conseils de Recherche</h3>
             <ul className="text-sm text-gray-700 space-y-1">
               <li>• Utilisez des mots-clés spécifiques pour de meilleurs résultats</li>
-              <li>• Ajustez la distance pour trouver des médecins près de vous</li>
               <li>• Filtrez par note pour trouver les meilleurs médecins</li>
-              <li>• Sélectionnez le type de consultation qui vous convient</li>
+              <li>• Précisez une ville pour restreindre la zone de recherche</li>
             </ul>
           </div>
         </div>
@@ -267,10 +231,10 @@ export default function DoctorsSearchPage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Recherches Populaires</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { name: 'Cardiologue à Conakry', specialty: 'cardiologue', location: 'Conakry' },
-            { name: 'Pédiatre disponible aujourd\'hui', specialty: 'pediatre', availability: 'today' },
-            { name: 'Dermatologue moins de 5 km', specialty: 'dermatologue', maxDistance: 5 },
-            { name: 'Consultation en ligne', specialty: '', consultationType: 'online' },
+            { name: 'Cardiologue à Conakry', specialty: 'Cardiologue', location: 'Conakry' },
+            { name: 'Pédiatre disponible maintenant', specialty: 'Pédiatre', availability: 'available' },
+            { name: 'Dermatologue le mieux noté', specialty: 'Dermatologue', minRating: 4.5 },
+            { name: 'Médecin généraliste', specialty: 'Médecin généraliste' },
           ].map((search, index) => (
             <button
               key={index}

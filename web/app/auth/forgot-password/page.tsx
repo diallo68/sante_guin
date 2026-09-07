@@ -35,7 +35,16 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const res = await fetch('/api/auth/forgot-password/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors({ submit: data.error || 'Erreur lors de l\'envoi du code' });
+        return;
+      }
       setStep('otp');
       setErrors({});
     } catch (error) {
@@ -70,7 +79,16 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const res = await fetch('/api/auth/forgot-password/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact, otp: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors({ otp: data.error || 'Code OTP invalide' });
+        return;
+      }
       setStep('reset');
       setErrors({});
     } catch (error) {
@@ -103,7 +121,16 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const res = await fetch('/api/auth/forgot-password/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact, otp: otp.join(''), newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors({ submit: data.error || 'Erreur lors de la réinitialisation' });
+        return;
+      }
       setStep('success');
       setErrors({});
     } catch (error) {

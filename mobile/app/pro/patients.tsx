@@ -35,14 +35,29 @@ export default function ProPatientsScreen() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     firstName: '', lastName: '', phone: '', email: '',
-    dateOfBirth: '', gender: 'M', bloodGroup: '', notes: '',
+    dateOfBirth: '', gender: 'homme', bloodGroup: '', notes: '',
   });
 
   const load = () => {
     setLoading(true);
     const q = search ? `?search=${encodeURIComponent(search)}` : '';
     api.get(`/pro/patients${q}`)
-      .then(res => setPatients(res.data.patients || res.data || []))
+      .then(res => {
+        // L'API renvoie deux listes distinctes : `patients` (issus des
+        // rendez-vous, avec le patient imbriqué sous `.patient`) et
+        // `manual` (dossiers patients créés à la main, déjà plats). La
+        // liste attendue ici est une seule liste plate — voir audit B13.
+        const fromAppointments: Patient[] = (res.data.patients || []).map((row: any) => ({
+          _id: row.patient?._id ?? row._id,
+          firstName: row.patient?.firstName ?? '',
+          lastName: row.patient?.lastName ?? '',
+          phone: row.patient?.phone,
+          email: row.patient?.email,
+          createdAt: row.patient?.createdAt,
+        }));
+        const manual: Patient[] = res.data.manual || [];
+        setPatients([...fromAppointments, ...manual]);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   };
@@ -59,7 +74,7 @@ export default function ProPatientsScreen() {
     try {
       await api.post('/pro/patients', form);
       setShowAdd(false);
-      setForm({ firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '', gender: 'M', bloodGroup: '', notes: '' });
+      setForm({ firstName: '', lastName: '', phone: '', email: '', dateOfBirth: '', gender: 'homme', bloodGroup: '', notes: '' });
       load();
     } catch {
       Alert.alert('Erreur', 'Impossible d\'enregistrer le patient.');
@@ -136,7 +151,7 @@ export default function ProPatientsScreen() {
                 <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: '#f1f5f9', gap: 8 }}>
                   {p.email && <View style={{ flexDirection: 'row', gap: 8 }}><Ionicons name="mail-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569' }}>{p.email}</Text></View>}
                   {p.dateOfBirth && <View style={{ flexDirection: 'row', gap: 8 }}><Ionicons name="calendar-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569' }}>Né(e) le {p.dateOfBirth}</Text></View>}
-                  {p.gender && <View style={{ flexDirection: 'row', gap: 8 }}><Ionicons name="person-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569' }}>{p.gender === 'M' ? 'Masculin' : 'Féminin'}</Text></View>}
+                  {p.gender && <View style={{ flexDirection: 'row', gap: 8 }}><Ionicons name="person-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569' }}>{p.gender === 'homme' ? 'Masculin' : 'Féminin'}</Text></View>}
                   {p.bloodGroup && <View style={{ flexDirection: 'row', gap: 8 }}><Ionicons name="water-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569' }}>Groupe {p.bloodGroup}</Text></View>}
                   {p.notes && <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}><Ionicons name="document-text-outline" size={14} color="#94a3b8" /><Text style={{ fontSize: 13, color: '#475569', flex: 1 }}>{p.notes}</Text></View>}
                 </View>
@@ -183,13 +198,13 @@ export default function ProPatientsScreen() {
             <View>
               <Text style={{ fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 8 }}>Genre</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                {['M', 'F'].map(g => (
+                {['homme', 'femme'].map(g => (
                   <TouchableOpacity
                     key={g}
                     onPress={() => setForm(prev => ({ ...prev, gender: g }))}
                     style={{ flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 2, borderColor: form.gender === g ? T : '#e2e8f0', backgroundColor: form.gender === g ? '#f0fdfa' : '#fff', alignItems: 'center' }}
                   >
-                    <Text style={{ fontWeight: '700', color: form.gender === g ? T : '#64748b' }}>{g === 'M' ? 'Masculin' : 'Féminin'}</Text>
+                    <Text style={{ fontWeight: '700', color: form.gender === g ? T : '#64748b' }}>{g === 'homme' ? 'Masculin' : 'Féminin'}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

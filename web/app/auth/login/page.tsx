@@ -33,6 +33,8 @@ const OAUTH_ERRORS: Record<string, string> = {
   oauth_profile_failed: 'Impossible de récupérer votre profil Google.',
   oauth_no_email: "Votre compte Google n'a pas d'email associé.",
   oauth_server_error: 'Erreur serveur. Réessayez.',
+  account_suspended: 'Ce compte a été suspendu. Contactez le support.',
+  oauth_invalid_state: 'Session de connexion expirée. Veuillez réessayer.',
 };
 
 type Tab      = 'login' | 'register';

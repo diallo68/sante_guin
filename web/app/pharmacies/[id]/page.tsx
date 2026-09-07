@@ -7,6 +7,7 @@ import {
   Star, MapPin, Clock, Phone, Mail, Package,
   Truck, Heart, CheckCircle, AlertCircle, Loader2,
 } from 'lucide-react';
+import { isCurrentlyOpen } from '@/lib/openingHours';
 
 interface Pharmacy {
   _id: string;
@@ -22,16 +23,6 @@ interface Pharmacy {
   rating: number;
   reviewCount: number;
   isVerified: boolean;
-}
-
-function isCurrentlyOpen(pharmacy: Pharmacy): boolean {
-  if (pharmacy.isOpen24h) return true;
-  if (!pharmacy.openTime || !pharmacy.closeTime) return false;
-  const now = new Date();
-  const [oh, om] = pharmacy.openTime.split(':').map(Number);
-  const [ch, cm] = pharmacy.closeTime.split(':').map(Number);
-  const current = now.getHours() * 60 + now.getMinutes();
-  return current >= oh * 60 + om && current < ch * 60 + cm;
 }
 
 export default function PharmacyDetailPage() {
@@ -80,7 +71,7 @@ export default function PharmacyDetailPage() {
     );
   }
 
-  const isOpen = isCurrentlyOpen(pharmacy);
+  const isOpen = isCurrentlyOpen(pharmacy.openTime, pharmacy.closeTime, pharmacy.isOpen24h);
 
   return (
     <div className="min-h-screen bg-gray-50">

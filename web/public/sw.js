@@ -1,4 +1,8 @@
-const CACHE_NAME = 'mondocteur-v1';
+// v2 : le cache v1 pouvait contenir des réponses API sensibles (voir audit
+// S08) ; changer de nom force sa suppression par le handler 'activate'
+// ci-dessous plutôt que de le laisser traîner indéfiniment chez les
+// utilisateurs déjà installés.
+const CACHE_NAME = 'mondocteur-v2';
 const OFFLINE_URL = '/offline';
 
 // Ressources à mettre en cache immédiatement à l'installation
@@ -41,6 +45,26 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Endpoints jamais mis en cache ni jamais mis en file d'attente hors-ligne :
+// tout ce qui touche à l'authentification (identifiants, mots de passe,
+// codes OTP en clair dans le corps de la requête) — voir audit S09.
+const NEVER_CACHE_OR_QUEUE_PREFIXES = ['/api/auth/'];
+
+// Seules ces routes API, qui ne renvoient aucune donnée personnelle
+// (annuaires publics), peuvent être mises en cache pour la consultation
+// hors-ligne. Tout le reste (dossiers, conversations, documents, session…)
+// ne doit jamais atterrir dans un cache partagé entre utilisateurs sur un
+// même appareil — voir audit S08.
+const PUBLIC_API_PREFIXES = ['/api/doctors', '/api/pharmacies', '/api/laboratories', '/api/reviews'];
+
+function isSensitiveApi(pathname) {
+  return NEVER_CACHE_OR_QUEUE_PREFIXES.some(p => pathname.startsWith(p));
+}
+
+function isPublicApi(pathname) {
+  return PUBLIC_API_PREFIXES.some(p => pathname.startsWith(p));
+}
+
 // ── Fetch : stratégie intelligente selon le type de ressource ──
 self.addEventListener('fetch', event => {
   const { request } = event;
@@ -51,7 +75,11 @@ self.addEventListener('fetch', event => {
 
   // API calls → Network First (essayer le réseau, sinon cache ou erreur)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstWithQueue(request));
+    if (isSensitiveApi(url.pathname)) {
+      event.respondWith(networkOnly(request));
+    } else {
+      event.respondWith(networkFirstWithQueue(request, isPublicApi(url.pathname)));
+    }
     return;
   }
 
@@ -69,28 +97,46 @@ self.addEventListener('fetch', event => {
   event.respondWith(networkFirstWithOfflineFallback(request));
 });
 
-// Network First — pour les appels API
-async function networkFirstWithQueue(request) {
+// Network First — pour les appels API publics (annuaires) : seules ces
+// réponses GET peuvent être mises en cache, et un POST en échec peut être
+// mis en file d'attente pour synchronisation ultérieure.
+async function networkFirstWithQueue(request, cacheableGet) {
   try {
     const response = await fetch(request.clone());
-    if (response.ok) {
+    if (response.ok && request.method === 'GET' && cacheableGet) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
     }
     return response;
   } catch {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-
-    // Mettre en file d'attente si c'est un POST (données à synchroniser)
-    if (request.method === 'POST') {
-      await queueRequest(request);
-      return new Response(
-        JSON.stringify({ offline: true, message: 'Données enregistrées localement. Synchronisation en attente.' }),
-        { status: 202, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (request.method === 'GET') {
+      const cached = cacheableGet ? await caches.match(request) : null;
+      if (cached) return cached;
+      return new Response(JSON.stringify({ error: 'Hors ligne' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    return new Response(JSON.stringify({ error: 'Hors ligne' }), {
+
+    // Mettre en file d'attente si c'est un POST vers une route non sensible
+    // (données à synchroniser dès le retour de connexion).
+    await queueRequest(request);
+    return new Response(
+      JSON.stringify({ offline: true, message: 'Données enregistrées localement. Synchronisation en attente.' }),
+      { status: 202, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// Network Only — pour l'authentification : ni cache, ni file d'attente.
+// Rejouer un login mis en file plus tard, avec le mot de passe en clair
+// dans le corps stocké, serait à la fois dangereux et incohérent (la
+// session aurait pu changer entre-temps) — voir audit S09.
+async function networkOnly(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    return new Response(JSON.stringify({ error: 'Hors ligne. Réessayez une fois reconnecté.' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' },
     });

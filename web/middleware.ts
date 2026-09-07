@@ -18,10 +18,17 @@ function decodeJWTPayload(token: string): { role?: string } | null {
   }
 }
 
+// Comparaison par segment de chemin, pas par préfixe brut : sans ça,
+// `/profile`.startsWith('/pro') vaut `true` et un patient ouvrant son
+// propre profil se faisait rediriger vers l'accueil — voir audit B02.
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
+  const isProtected = PROTECTED_ROUTES.some(r => matchesRoute(pathname, r));
   if (!isProtected) return NextResponse.next();
 
   const token = req.cookies.get(JWT_COOKIE)?.value;
@@ -41,7 +48,7 @@ export function middleware(req: NextRequest) {
   }
 
   // /pro est réservé aux médecins, pharmaciens et admins
-  const isProRoute = PRO_ONLY_ROUTES.some(r => pathname.startsWith(r));
+  const isProRoute = PRO_ONLY_ROUTES.some(r => matchesRoute(pathname, r));
   if (isProRoute && payload.role === 'patient') {
     return NextResponse.redirect(new URL('/', req.url));
   }

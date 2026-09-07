@@ -17,7 +17,10 @@ interface Doc {
   name: string;
   category: string;
   uploadDate: string;
-  size?: number;
+  // L'API renvoie déjà une taille formatée (ex. "12 KB"), pas un nombre
+  // d'octets : la reformater ici comme un nombre affichait "NaN MB" —
+  // voir audit B23.
+  size?: string;
   url: string;
 }
 
@@ -26,13 +29,6 @@ const CAT_ICON: Record<string, string> = {
   Prescriptions: 'document-text', Analyses: 'flask', Imagerie: 'image',
   Certificats: 'ribbon', Autres: 'attach',
 };
-
-function fmtSize(bytes?: number) {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default function ProDocumentsScreen() {
   const router = useRouter();
@@ -68,11 +64,19 @@ export default function ProDocumentsScreen() {
       const fd = new FormData();
       fd.append('file', { uri: uploadFile.uri, name: uploadFile.name, type: uploadFile.mimeType || 'application/octet-stream' } as any);
       fd.append('category', uploadCategory);
-      await fetch(`${api.defaults.baseURL}/pro/documents`, {
+      const res = await fetch(`${api.defaults.baseURL}/pro/documents`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+      // Le résultat n'était jamais vérifié : un rejet serveur (type de
+      // fichier non autorisé, accès refusé...) était affiché comme un
+      // succès — voir audit B23.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        Alert.alert('Erreur', data.error || 'Impossible d\'uploader le document.');
+        return;
+      }
       setShowUpload(false);
       setUploadFile(null);
       load();
@@ -164,7 +168,7 @@ export default function ProDocumentsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#0f172a' }} numberOfLines={1}>{doc.name}</Text>
-                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{doc.category} · {doc.uploadDate}{doc.size ? ` · ${fmtSize(doc.size)}` : ''}</Text>
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{doc.category} · {doc.uploadDate}{doc.size ? ` · ${doc.size}` : ''}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity onPress={() => Linking.openURL(doc.url)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#f0fdfa', alignItems: 'center', justifyContent: 'center' }}>

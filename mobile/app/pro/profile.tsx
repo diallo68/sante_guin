@@ -35,7 +35,8 @@ export default function ProProfileScreen() {
   useEffect(() => {
     api.get('/pro/profile')
       .then(res => {
-        const p = res.data.profile || res.data;
+        // L'API renvoie { doctor }, pas { profile } — voir audit B12.
+        const p = res.data.doctor || res.data;
         setProfile(p);
         setForm(p || {});
       })
@@ -47,7 +48,7 @@ export default function ProProfileScreen() {
     setSaving(true);
     try {
       const res = await api.put('/pro/profile', form);
-      const updated = res.data.profile || res.data;
+      const updated = res.data.doctor || res.data;
       setProfile(updated);
       setEditing(false);
       setSuccess(true);

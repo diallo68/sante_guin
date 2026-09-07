@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IDocument {
+  _id: mongoose.Types.ObjectId;
   name: string;
   url: string;
   type: string;
+  storedFilename: string; // nom sur disque, dans le répertoire privé
   uploadedAt: Date;
 }
 
@@ -26,6 +28,10 @@ const DocumentSchema = new Schema<IDocument>({
   name: { type: String, required: true },
   url:  { type: String, required: true },
   type: { type: String, required: true },
+  // Absent sur les documents uploadés avant l'introduction du stockage
+  // privé : la route de téléchargement retombe alors sur l'ancien chemin
+  // public pour ne pas casser l'accès aux documents déjà existants.
+  storedFilename: { type: String },
   uploadedAt: { type: Date, default: Date.now },
 });
 

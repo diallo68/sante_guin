@@ -4,11 +4,12 @@ import Pharmacy from '@/models/Pharmacy';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await connectDB();
-    const pharmacy = await Pharmacy.findById(params.id).lean();
+    const pharmacy = await Pharmacy.findById(id).lean();
     if (!pharmacy) return NextResponse.json({ error: 'Pharmacie introuvable' }, { status: 404 });
     return NextResponse.json({ pharmacy });
   } catch {

@@ -40,7 +40,8 @@ export default function ProCabinetScreen() {
   useEffect(() => {
     api.get('/pro/cabinet')
       .then(res => {
-        const c = res.data.cabinet || res.data;
+        // L'API renvoie { profile }, pas { cabinet } — voir audit B12.
+        const c = res.data.profile || res.data;
         setCabinet(c);
         setForm(c || {});
       })
@@ -55,7 +56,7 @@ export default function ProCabinetScreen() {
     setSaving(true);
     try {
       const res = await api.put('/pro/cabinet', form);
-      const updated = res.data.cabinet || res.data;
+      const updated = res.data.profile || res.data;
       setCabinet(updated);
       setEditing(false);
       Alert.alert('Succès', 'Établissement mis à jour.');

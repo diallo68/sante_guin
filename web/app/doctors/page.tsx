@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Search, MapPin, Star, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Doctor {
@@ -37,15 +38,29 @@ const SPECIALTIES = [
 const PAGE_SIZE = 12;
 
 export default function DoctorsPage() {
+  // Filtres transmis par la page de recherche avancée (/doctors/search) et
+  // par tout lien direct — auparavant totalement ignorés à l'arrivée sur
+  // cette page — voir audit B21.
+  const urlParams = useSearchParams();
+  const initialSpecialty = urlParams.get('specialty');
+
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('Tous');
+  const [selectedSpecialty, setSelectedSpecialty] = useState(
+    initialSpecialty && SPECIALTIES.includes(initialSpecialty) ? initialSpecialty : 'Tous'
+  );
   const [sortBy, setSortBy] = useState<'rating' | 'availability'>('rating');
   const [showFilters, setShowFilters] = useState(false);
-  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available'>('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available'>(
+    urlParams.get('availability') === 'available' ? 'available' : 'all'
+  );
+  const [cityFilter] = useState(urlParams.get('location') || '');
+  const [minRating] = useState(urlParams.get('minRating') || '');
+  const [maxPrice] = useState(urlParams.get('maxPrice') || '');
+  const [language] = useState(urlParams.get('language') || '');
   const [page, setPage] = useState(1);
 
   // Debounce searchQuery de 400ms
@@ -61,6 +76,10 @@ export default function DoctorsPage() {
     if (selectedSpecialty !== 'Tous') params.set('specialty', selectedSpecialty);
     if (availabilityFilter === 'available') params.set('available', 'true');
     if (debouncedSearch) params.set('search', debouncedSearch);
+    if (cityFilter) params.set('location', cityFilter);
+    if (minRating) params.set('minRating', minRating);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+    if (language) params.set('language', language);
     try {
       const res = await fetch(`/api/doctors?${params}`);
       const data = await res.json();
@@ -72,7 +91,7 @@ export default function DoctorsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedSpecialty, availabilityFilter, debouncedSearch]);
+  }, [selectedSpecialty, availabilityFilter, debouncedSearch, cityFilter, minRating, maxPrice, language]);
 
   useEffect(() => {
     setPage(1);

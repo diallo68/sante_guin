@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 import Doctor from '@/models/Doctor';
+import Appointment from '@/models/Appointment';
 
 // GET /api/conversations — list conversations for current user
 export async function GET(req: NextRequest) {
@@ -73,30 +74,55 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ conversations: withUnread });
 }
 
-// POST /api/conversations — create conversation + first message (called by appointments API)
+// POST /api/conversations — create an appointment conversation + first message.
+// Le patient est toujours dérivé de la session (jamais du body), et le
+// rendez-vous cité doit réellement lui appartenir : sans ça, n'importe quel
+// utilisateur authentifié pouvait usurper un expéditeur et associer sa
+// conversation au rendez-vous (donc aux métadonnées) d'un tiers.
 export async function POST(req: NextRequest) {
   const authUser = await getAuthUser(req);
   if (!authUser) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-  const { doctorId, patientId, appointmentId, firstMessage } = await req.json();
+  if (authUser.role !== 'patient') {
+    return NextResponse.json({ error: 'Réservé aux patients' }, { status: 403 });
+  }
+
+  const { appointmentId, firstMessage } = await req.json();
+  if (!appointmentId || !firstMessage?.trim()) {
+    return NextResponse.json({ error: 'appointmentId et firstMessage sont requis' }, { status: 400 });
+  }
 
   await connectDB();
 
+  const appointment = await Appointment.findOne({
+    _id: appointmentId,
+    patientId: authUser.userId,
+  }).select('doctorId patientId').lean();
+
+  if (!appointment) {
+    return NextResponse.json({ error: 'Rendez-vous introuvable' }, { status: 404 });
+  }
+
+  const existing = await Conversation.findOne({ type: 'appointment', appointmentId });
+  if (existing) {
+    return NextResponse.json({ conversation: existing }, { status: 200 });
+  }
+
   const conversation = await Conversation.create({
     type: 'appointment',
-    doctorId,
-    patientId,
+    doctorId: appointment.doctorId,
+    patientId: authUser.userId,
     appointmentId,
-    lastMessage: firstMessage,
+    lastMessage: firstMessage.trim(),
     lastMessageAt: new Date(),
   });
 
   await Message.create({
     conversationId: conversation._id,
-    senderId: patientId,
+    senderId: authUser.userId,
     senderRole: 'patient',
-    content: firstMessage,
-    readBy: [patientId],
+    content: firstMessage.trim(),
+    readBy: [authUser.userId],
   });
 
   return NextResponse.json({ conversation }, { status: 201 });
