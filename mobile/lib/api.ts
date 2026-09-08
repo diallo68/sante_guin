@@ -7,7 +7,11 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
+  // Signale au serveur qu'il s'agit du client mobile (sans stockage de
+  // cookie) : certaines routes d'auth (login, change-password) n'incluent
+  // le JWT dans le corps JSON que pour ce client — le web s'appuie
+  // uniquement sur le cookie httpOnly (audit RA-02).
+  headers: { 'Content-Type': 'application/json', 'X-Client-Platform': 'mobile' },
 });
 
 // Attach Bearer token on every request (works on both native and web)

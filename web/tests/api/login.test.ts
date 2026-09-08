@@ -39,10 +39,27 @@ describe('POST /api/auth/login', () => {
     expect(body.requiresVerification).toBe(true);
   });
 
-  it('connecte un compte valide et renvoie un token', async () => {
+  it('connecte un compte valide (web) sans renvoyer le JWT dans le JSON', async () => {
     const { email, password } = await createUser();
     const req = jsonRequest('http://localhost/api/auth/login', {
       method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    const res = await login(req);
+    expect(res.status).toBe(200);
+    // Le web s'appuie uniquement sur le cookie httpOnly posé par la réponse :
+    // renvoyer aussi le JWT en clair exposerait un bearer réutilisable à
+    // toute XSS — voir audit RA-02.
+    const body = await res.json();
+    expect(body.token).toBeUndefined();
+    expect(res.headers.get('set-cookie')).toContain('gs_token=');
+  });
+
+  it('connecte un compte valide (mobile) et renvoie un token', async () => {
+    const { email, password } = await createUser();
+    const req = jsonRequest('http://localhost/api/auth/login', {
+      method: 'POST',
+      headers: { 'X-Client-Platform': 'mobile' },
       body: JSON.stringify({ email, password }),
     });
     const res = await login(req);
@@ -85,6 +102,7 @@ describe('Révocation de session (S04)', () => {
 
     const changeReq = authedRequest('http://localhost/api/auth/change-password', token, {
       method: 'PUT',
+      headers: { 'X-Client-Platform': 'mobile' },
       body: JSON.stringify({ currentPassword: password, newPassword: 'brand-new-password' }),
     });
     const changeRes = await changePassword(changeReq);
