@@ -52,7 +52,7 @@ const ROLES: { key: UserType; label: string; emoji: string }[] = [
 // la fois plutôt qu'un long formulaire) — même mécanisme que sur
 // YouGouYouGou (packages/frontend RegisterForm.tsx), adapté aux 4 rôles et
 // aux champs attendus par /api/auth/signup, avec le thème visuel Mondocteur.
-type QuestionId = 'role' | 'nameCombo' | 'specialties' | 'orgName' | 'location' | 'email' | 'password' | 'password2' | 'terms';
+type QuestionId = 'role' | 'nameCombo' | 'dob' | 'city' | 'specialties' | 'orgName' | 'location' | 'email' | 'password' | 'password2' | 'terms';
 interface Question { id: QuestionId }
 
 // ────────────────────────────────────────────────────────────
@@ -270,10 +270,12 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     setLastName(parts.slice(1).join(' '));
   };
 
+  const [dob, setDob]                     = useState('');
+  const [city, setCity]                   = useState(''); // ville de résidence
   const [email, setEmail]                 = useState('');
   const [password, setPassword]           = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [location, setLocation]           = useState('');
+  const [location, setLocation]           = useState(''); // localisation professionnelle (médecin/pharmacien/laboratoriste)
   const [orgName, setOrgName]             = useState(''); // nom pharmacie/laboratoire
   const [acceptTerms, setAcceptTerms]     = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -306,12 +308,18 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   // Le parcours dépend du rôle choisi à la première question — mécanisme
   // identique à YouGouYouGou (une question à la fois), adapté aux 4 rôles.
   const questions: Question[] = useMemo(() => {
-    const q: Question[] = [{ id: 'role' }, { id: 'nameCombo' }];
+    const q: Question[] = [{ id: 'role' }, { id: 'nameCombo' }, { id: 'dob' }, { id: 'city' }];
     if (role === 'doctor') q.push({ id: 'specialties' }, { id: 'location' });
     if (role === 'pharmacist' || role === 'laboratorist') q.push({ id: 'orgName' }, { id: 'location' });
     q.push({ id: 'email' }, { id: 'password' }, { id: 'password2' }, { id: 'terms' });
     return q;
   }, [role]);
+
+  // Pas de minimum d'âge (contrairement à YouGouYouGou) : un mineur doit
+  // pouvoir créer son propre compte patient pour prendre rendez-vous —
+  // l'app n'a pas de notion de compte accompagnant/enfant. Seule contrainte :
+  // pas de date dans le futur.
+  const maxDob = new Date().toISOString().split('T')[0];
 
   const q = questions[Math.min(qIndex, questions.length - 1)];
   const progress = Math.round(((qIndex + 1) / questions.length) * 100);
@@ -328,6 +336,8 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const validateCurrent = (): string | null => {
     switch (q.id) {
       case 'nameCombo':   return firstName.trim() ? null : 'Le prénom est obligatoire';
+      case 'dob':         return dob ? null : 'Date de naissance requise';
+      case 'city':        return city ? null : 'Choisissez votre ville de résidence';
       case 'specialties': return selectedSpecialties.length > 0 ? null : 'Sélectionnez au moins une spécialité';
       case 'orgName':     return orgName.trim() ? null : 'Ce champ est requis';
       case 'location':    return location ? null : 'Choisissez votre localisation';
@@ -349,6 +359,8 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       const err = (() => {
         switch (question.id) {
           case 'nameCombo':   return firstName.trim() ? null : 'err';
+          case 'dob':         return dob ? null : 'err';
+          case 'city':        return city ? null : 'err';
           case 'specialties': return selectedSpecialties.length > 0 ? null : 'err';
           case 'orgName':     return orgName.trim() ? null : 'err';
           case 'location':    return location ? null : 'err';
@@ -372,7 +384,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firstName, lastName, email, password, role,
+          firstName, lastName, email, password, role, dob, city,
           specialties: role === 'doctor' ? selectedSpecialties : undefined,
           location: (role === 'doctor' || role === 'pharmacist' || role === 'laboratorist') ? location : undefined,
           pharmacyName: role === 'pharmacist' ? orgName : undefined,
@@ -548,6 +560,32 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
               onKeyDown={handleEnter} placeholder="Mohamed Diallo" autoComplete="name"
               className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 placeholder:text-gray-300 placeholder:font-medium" />
             {errors.nameCombo && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.nameCombo}</p>}
+          </div>
+        )}
+
+        {q.id === 'dob' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">🎂 Votre date de naissance ?</h3>
+            <input ref={answerRef} type="date" value={dob} onChange={e => setDob(e.target.value)}
+              onKeyDown={handleEnter} max={maxDob} autoComplete="bday"
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2" />
+            {errors.dob && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.dob}</p>}
+          </div>
+        )}
+
+        {q.id === 'city' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-1.5"><MapPin size={18} className="text-teal-600" /> Votre ville de résidence ?</h3>
+            <select ref={answerRef} value={city} onChange={e => setCity(e.target.value)}
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 appearance-none cursor-pointer">
+              <option value="">Choisir votre ville...</option>
+              {LOCATIONS.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.places.map(p => <option key={p} value={p}>{p}</option>)}
+                </optgroup>
+              ))}
+            </select>
+            {errors.city && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.city}</p>}
           </div>
         )}
 
