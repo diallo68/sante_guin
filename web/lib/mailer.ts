@@ -1,5 +1,6 @@
-// Mailer — SendGrid HTTP API (port 443, jamais bloqué par Render)
+// Mailer — Brevo HTTP API (port 443, jamais bloqué par Render/Oracle)
 import { escapeHtml } from './htmlEscape';
+import { sendViaBrevo } from './emailProvider';
 
 export async function sendEmail({
   to,
@@ -10,31 +11,13 @@ export async function sendEmail({
   subject: string;
   html: string;
 }) {
-  const apiKey = process.env.SENDGRID_API_KEY;
-  const from = process.env.SENDGRID_FROM_EMAIL || 'noreply@mondocteur.org';
-
-  if (!apiKey) {
-    console.warn(`[SendGrid skipped — SENDGRID_API_KEY manquant] To: ${to}`);
-    return;
-  }
-
-  const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: to }] }],
-      from: { email: from, name: 'Mondocteur' },
-      subject,
-      content: [{ type: 'text/html', value: html }],
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`SendGrid error ${res.status}: ${err}`);
+  const result = await sendViaBrevo({ to, subject, html });
+  if (!result.ok) {
+    if (result.error === 'BREVO_API_KEY manquant') {
+      console.warn(`[Brevo skipped — BREVO_API_KEY manquant] To: ${to}`);
+      return;
+    }
+    throw new Error(result.error);
   }
 }
 

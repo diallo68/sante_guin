@@ -3,7 +3,7 @@ import { POST as deleteRequest } from '@/app/api/account/delete-request/route';
 import DeletionRequest from '@/models/DeletionRequest';
 import { jsonRequest } from '../helpers';
 
-// Régression B19 : sans SendGrid configuré (ou en cas d'échec d'envoi), la
+// Régression B19 : sans Brevo configuré (ou en cas d'échec d'envoi), la
 // demande de suppression était perdue sans aucune trace, tout en
 // répondant un succès à l'utilisateur.
 describe('POST /api/account/delete-request (B19)', () => {
@@ -17,7 +17,7 @@ describe('POST /api/account/delete-request (B19)', () => {
     const stored = await DeletionRequest.findOne({ email: 'jean@test.local' });
     expect(stored).not.toBeNull();
     expect(stored?.name).toBe('Jean Dupont');
-    // SENDGRID_API_KEY n'est pas configuré dans l'environnement de test.
+    // BREVO_API_KEY n'est pas configuré dans l'environnement de test.
     expect(stored?.emailSent).toBe(false);
   });
 

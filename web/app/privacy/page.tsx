@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc list-inside text-gray-600 space-y-2 text-sm">
               <li><strong>Professionnels de santé :</strong> les médecins, pharmaciens et laboratoristes avec lesquels vous interagissez ont accès aux informations nécessaires à votre suivi médical.</li>
-              <li><strong>Prestataires techniques :</strong> nous utilisons MongoDB Atlas (hébergement base de données), SendGrid (emails transactionnels) et Groq (assistant IA à destination des professionnels de santé, qui peut recevoir le texte et les documents soumis lors d&apos;une consultation de l&apos;assistant) soumis à des obligations de confidentialité strictes.</li>
+              <li><strong>Prestataires techniques :</strong> nous utilisons MongoDB Atlas (hébergement base de données), Brevo (emails transactionnels) et Groq (assistant IA à destination des professionnels de santé, qui peut recevoir le texte et les documents soumis lors d&apos;une consultation de l&apos;assistant) soumis à des obligations de confidentialité strictes.</li>
               <li><strong>Obligations légales :</strong> si la loi l&apos;exige ou pour protéger nos droits.</li>
             </ul>
           </Section>

@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     // est échappé avant interpolation dans le HTML — non échappé, un nom
     // ou un message contenant des balises pouvait falsifier le contenu de
     // l'email reçu par l'administration — voir audit S19.
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.SENDGRID_FROM_EMAIL;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.BREVO_FROM_EMAIL;
     if (adminEmail) {
       await sendEmail({
         to: adminEmail,
