@@ -1,8 +1,5 @@
 import { escapeHtml } from './htmlEscape';
-
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@mondocteur.org';
-const FROM_NAME = 'Mondocteur';
+import { sendViaBrevo } from './emailProvider';
 
 interface EmailPayload {
   to: string;
@@ -11,34 +8,12 @@ interface EmailPayload {
 }
 
 export async function sendEmail({ to, subject, html }: EmailPayload): Promise<boolean> {
-  if (!SENDGRID_API_KEY) {
-    console.warn('[email] SENDGRID_API_KEY not set — email skipped');
+  const result = await sendViaBrevo({ to, subject, html });
+  if (!result.ok) {
+    console.warn(`[email] ${result.error}`);
     return false;
   }
-  try {
-    const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }] }],
-        from: { email: FROM_EMAIL, name: FROM_NAME },
-        subject,
-        content: [{ type: 'text/html', value: html }],
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      console.error('[email] SendGrid error:', err);
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.error('[email] fetch error:', e);
-    return false;
-  }
+  return true;
 }
 
 // ── Templates ──────────────────────────────────────────────────

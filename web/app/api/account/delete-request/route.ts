@@ -21,11 +21,11 @@ export async function POST(req: NextRequest) {
   await connectDB();
 
   // Toujours persisté, indépendamment du succès de l'email : sans ça,
-  // l'absence de SendGrid (ou un envoi en échec) faisait perdre la
+  // l'absence de Brevo (ou un envoi en échec) faisait perdre la
   // demande silencieusement tout en répondant un succès — voir audit B19.
   const request = await DeletionRequest.create({ name, email, emailSent: false });
 
-  const adminEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@mondocteur.org';
+  const adminEmail = process.env.BREVO_FROM_EMAIL || 'noreply@mondocteur.org';
 
   // `name`/`email` sont échappés avant interpolation : non échappés, un
   // nom contenant des balises pouvait falsifier le contenu de l'email

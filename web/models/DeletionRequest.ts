@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // Persiste les demandes de suppression de compte plutôt que de ne
-// dépendre que d'un email de notification : si SendGrid est mal
+// dépendre que d'un email de notification : si Brevo est mal
 // configuré ou indisponible, la demande était auparavant perdue sans
 // aucune trace, alors même que l'API répondait un succès — voir audit B19.
 export interface IDeletionRequest extends Document {
