@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, X, Check, MapPin } from 'lucide-react';
@@ -38,8 +38,22 @@ const OAUTH_ERRORS: Record<string, string> = {
 };
 
 type Tab      = 'login' | 'register';
-type UserType = 'patient' | 'doctor';
+type UserType = 'patient' | 'doctor' | 'pharmacist' | 'laboratorist';
 type RegStep   = 'form' | 'otp';
+
+const ROLES: { key: UserType; label: string; emoji: string }[] = [
+  { key: 'patient',      label: 'Patient',       emoji: '🧑' },
+  { key: 'doctor',       label: 'Médecin',       emoji: '👨‍⚕️' },
+  { key: 'pharmacist',   label: 'Pharmacien',    emoji: '💊' },
+  { key: 'laboratorist', label: 'Laboratoriste', emoji: '🔬' },
+];
+
+// Une question du parcours conversationnel (façon Typeform : une question à
+// la fois plutôt qu'un long formulaire) — même mécanisme que sur
+// YouGouYouGou (packages/frontend RegisterForm.tsx), adapté aux 4 rôles et
+// aux champs attendus par /api/auth/signup, avec le thème visuel Mondocteur.
+type QuestionId = 'role' | 'nameCombo' | 'specialties' | 'orgName' | 'location' | 'email' | 'password' | 'password2' | 'terms';
+interface Question { id: QuestionId }
 
 // ────────────────────────────────────────────────────────────
 // Page principale
@@ -236,18 +250,35 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
 // ────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const [regStep, setRegStep] = useState<RegStep>('form');
-  const [userType, setUserType] = useState<UserType>('patient');
+  const [qIndex, setQIndex] = useState(0);
+  const [role, setRole] = useState<UserType>('patient');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword]   = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
   const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
 
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '',
-    location: '', password: '', confirmPassword: '', acceptTerms: false,
-  });
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName]   = useState('');
+  // Une seule case « Prénom et Nom » à l'écran (comme YouGouYouGou) ; séparée
+  // en interne puisque le backend attend les deux champs.
+  const [fullName, setFullName] = useState('');
+  const handleFullNameChange = (v: string) => {
+    setFullName(v);
+    const parts = v.trim().split(/\s+/);
+    setFirstName(parts[0] || '');
+    setLastName(parts.slice(1).join(' '));
+  };
+
+  const [email, setEmail]                 = useState('');
+  const [password, setPassword]           = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [location, setLocation]           = useState('');
+  const [orgName, setOrgName]             = useState(''); // nom pharmacie/laboratoire
+  const [acceptTerms, setAcceptTerms]     = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const answerRef = useRef<HTMLInputElement & HTMLSelectElement>(null);
 
   // OTP
   const [userId, setUserId]               = useState('');
@@ -261,8 +292,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
   ];
 
-  const pwMatch = formData.password && formData.confirmPassword
-    ? formData.password === formData.confirmPassword : null;
+  const pwMatch = password && confirmPassword ? password === confirmPassword : null;
 
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -270,34 +300,71 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     return () => clearTimeout(t);
   }, [resendTimer]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
   const toggleSpecialty = (s: string) =>
     setSelectedSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
 
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!formData.firstName.trim()) e.firstName = 'Le prénom est requis';
-    if (!formData.lastName.trim())  e.lastName  = 'Le nom est requis';
-    if (!formData.email.trim()) e.email = 'L\'email est requis';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = 'Email invalide';
-    if (userType === 'doctor' && selectedSpecialties.length === 0) e.specialty = 'Sélectionnez au moins une spécialité';
-    if (userType === 'doctor' && !formData.location) e.location = 'La localisation est requise';
-    if (!formData.password) e.password = 'Le mot de passe est requis';
-    else if (formData.password.length < 8) e.password = 'Minimum 8 caractères';
-    if (formData.password !== formData.confirmPassword) e.confirmPassword = 'Les mots de passe ne correspondent pas';
-    if (!formData.acceptTerms) e.acceptTerms = 'Vous devez accepter les conditions';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  // Le parcours dépend du rôle choisi à la première question — mécanisme
+  // identique à YouGouYouGou (une question à la fois), adapté aux 4 rôles.
+  const questions: Question[] = useMemo(() => {
+    const q: Question[] = [{ id: 'role' }, { id: 'nameCombo' }];
+    if (role === 'doctor') q.push({ id: 'specialties' }, { id: 'location' });
+    if (role === 'pharmacist' || role === 'laboratorist') q.push({ id: 'orgName' }, { id: 'location' });
+    q.push({ id: 'email' }, { id: 'password' }, { id: 'password2' }, { id: 'terms' });
+    return q;
+  }, [role]);
+
+  const q = questions[Math.min(qIndex, questions.length - 1)];
+  const progress = Math.round(((qIndex + 1) / questions.length) * 100);
+
+  // Remet le focus sur le champ texte à chaque nouvelle question
+  useEffect(() => {
+    const t = setTimeout(() => answerRef.current?.focus(), 200);
+    return () => clearTimeout(t);
+  }, [qIndex]);
+
+  const orgNameLabel = role === 'pharmacist' ? 'Nom de la pharmacie ?' : 'Nom du laboratoire ?';
+
+  // Valide la question courante ; renvoie un message d'erreur ou null
+  const validateCurrent = (): string | null => {
+    switch (q.id) {
+      case 'nameCombo':   return firstName.trim() ? null : 'Le prénom est obligatoire';
+      case 'specialties': return selectedSpecialties.length > 0 ? null : 'Sélectionnez au moins une spécialité';
+      case 'orgName':     return orgName.trim() ? null : 'Ce champ est requis';
+      case 'location':    return location ? null : 'Choisissez votre localisation';
+      case 'email':
+        if (!email.trim()) return 'Entrez votre adresse email';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Email invalide';
+        return null;
+      case 'password':  return password.length >= 8 ? null : 'Mot de passe trop court (8 min)';
+      case 'password2': return password === confirmPassword ? null : 'Les mots de passe ne correspondent pas';
+      case 'terms':     return acceptTerms ? null : 'Vous devez accepter les conditions';
+      default:          return null; // 'role' géré à part (choix par carte)
+    }
   };
 
-  const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validate = () => {
+    // Revalide tout le parcours (au cas où une question aurait été
+    // modifiée après coup via "← Retour") avant l'envoi final.
+    for (const question of questions) {
+      const err = (() => {
+        switch (question.id) {
+          case 'nameCombo':   return firstName.trim() ? null : 'err';
+          case 'specialties': return selectedSpecialties.length > 0 ? null : 'err';
+          case 'orgName':     return orgName.trim() ? null : 'err';
+          case 'location':    return location ? null : 'err';
+          case 'email':       return email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? null : 'err';
+          case 'password':    return password.length >= 8 ? null : 'err';
+          case 'password2':   return password === confirmPassword ? null : 'err';
+          case 'terms':       return acceptTerms ? null : 'err';
+          default:            return null;
+        }
+      })();
+      if (err) return false;
+    }
+    return true;
+  };
+
+  const handleSendCode = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
@@ -305,12 +372,11 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firstName: formData.firstName, lastName: formData.lastName,
-          email: formData.email,
-          password: formData.password,
-          role: userType === 'doctor' ? 'doctor' : 'patient',
-          specialties: userType === 'doctor' ? selectedSpecialties : undefined,
-          location: userType === 'doctor' ? formData.location : undefined,
+          firstName, lastName, email, password, role,
+          specialties: role === 'doctor' ? selectedSpecialties : undefined,
+          location: (role === 'doctor' || role === 'pharmacist' || role === 'laboratorist') ? location : undefined,
+          pharmacyName: role === 'pharmacist' ? orgName : undefined,
+          laboratoryName: role === 'laboratorist' ? orgName : undefined,
         }),
       });
       const data = await res.json();
@@ -324,6 +390,28 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const goNext = () => {
+    const err = validateCurrent();
+    if (err) { setErrors({ [q.id]: err }); return; }
+    setErrors({});
+    if (qIndex < questions.length - 1) setQIndex(i => i + 1);
+    else handleSendCode();
+  };
+
+  const goBack = () => { setErrors({}); if (qIndex > 0) setQIndex(i => i - 1); };
+  const handleEnter = (e: React.KeyboardEvent) => { if (e.key === 'Enter') goNext(); };
+
+  // Choix par carte (rôle) : avance automatiquement après sélection.
+  // `advancing` évite un double-clic pendant le délai d'animation.
+  const advancing = useRef(false);
+  const pickRole = (r: UserType) => {
+    if (advancing.current) return;
+    advancing.current = true;
+    setRole(r);
+    setErrors({});
+    setTimeout(() => { advancing.current = false; setQIndex(i => i + 1); }, 200);
   };
 
   const handleOTPChange = (index: number, value: string) => {
@@ -424,60 +512,50 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
     );
   }
 
-  // ── Step Formulaire ──
+  // ── Step Formulaire : une question à la fois ──────────────────────────
   return (
-    <div className="space-y-4">
-      {/* Toggle Patient / Médecin */}
-      <div className="flex bg-gray-100 rounded-full p-1">
-        {([
-          { key: 'patient', label: '🧑 Patient' },
-          { key: 'doctor',  label: '👨‍⚕️ Médecin / Cabinet' },
-        ] as const).map(t => (
-          <button key={t.key} type="button" onClick={() => setUserType(t.key)}
-            className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${userType === t.key ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
-            {t.label}
-          </button>
-        ))}
+    <div key={qIndex} className="flex flex-col gap-5 min-h-[380px]">
+      {/* Barre de progression */}
+      <div className="flex flex-col gap-2">
+        <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full bg-teal-600 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        </div>
+        <span className="text-[11px] font-bold text-gray-400">Question {qIndex + 1} sur {questions.length}</span>
       </div>
 
-      <form onSubmit={handleSendCode} className="space-y-3">
-        {/* Prénom + Nom */}
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Prénom *</label>
-            <input type="text" name="firstName" value={formData.firstName} onChange={handleChange}
-              placeholder="Mohamed"
-              className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`} />
-            {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Nom</label>
-            <input type="text" name="lastName" value={formData.lastName} onChange={handleChange}
-              placeholder="Diallo"
-              className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.lastName ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`} />
-          </div>
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">📧 Email *</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange}
-            placeholder="votre@email.com"
-            className={`w-full px-3 py-2.5 border-2 rounded-xl text-sm focus:outline-none transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`} />
-          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-        </div>
-
-        {/* Spécialités (médecin) */}
-        {userType === 'doctor' && (
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-gray-700">Spécialité(s) *</label>
-              {selectedSpecialties.length > 0 && (
-                <span className="text-xs text-teal-600 font-semibold">{selectedSpecialties.length} sélectionnée{selectedSpecialties.length > 1 ? 's' : ''}</span>
-              )}
+      {/* Corps de la question, centré verticalement */}
+      <div className="flex-1 flex flex-col justify-center gap-4">
+        {q.id === 'role' && (
+          <>
+            <p className="text-sm font-bold text-teal-700">👋 Bienvenue sur Mondocteur</p>
+            <h3 className="text-xl font-black text-gray-900 -mt-1">Vous êtes ?</h3>
+            <div className="grid grid-cols-2 gap-3 mt-1">
+              {ROLES.map(r => (
+                <button key={r.key} type="button" onClick={() => pickRole(r.key)}
+                  className={`flex flex-col items-center gap-2 py-5 rounded-2xl border-2 transition-colors ${role === r.key ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
+                  <span className="text-2xl">{r.emoji}</span>
+                  <span className="text-sm font-bold text-gray-900">{r.label}</span>
+                </button>
+              ))}
             </div>
+          </>
+        )}
+
+        {q.id === 'nameCombo' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">Quel est votre prénom et nom ?</h3>
+            <input ref={answerRef} type="text" value={fullName} onChange={e => handleFullNameChange(e.target.value)}
+              onKeyDown={handleEnter} placeholder="Mohamed Diallo" autoComplete="name"
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 placeholder:text-gray-300 placeholder:font-medium" />
+            {errors.nameCombo && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.nameCombo}</p>}
+          </div>
+        )}
+
+        {q.id === 'specialties' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">Votre/vos spécialité(s) ?</h3>
             {selectedSpecialties.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="flex flex-wrap gap-1 mb-1">
                 {selectedSpecialties.map(s => (
                   <span key={s} className="inline-flex items-center gap-1 bg-teal-100 text-teal-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                     {s}
@@ -487,10 +565,10 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
               </div>
             )}
             <button type="button" onClick={() => setShowSpecialtyModal(true)}
-              className={`w-full px-3 py-2 border-2 rounded-xl text-left text-xs transition-all ${errors.specialty ? 'border-red-400 bg-red-50 text-red-500' : 'border-gray-200 hover:border-teal-400 text-gray-400'}`}>
+              className="w-full px-3 py-2.5 border-2 border-dashed rounded-xl text-left text-sm border-gray-300 hover:border-teal-400 text-gray-500 transition-all">
               {selectedSpecialties.length === 0 ? '+ Ajouter une spécialité' : '+ Ajouter une autre'}
             </button>
-            {errors.specialty && <p className="text-red-500 text-xs mt-1">{errors.specialty}</p>}
+            {errors.specialties && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.specialties}</p>}
 
             {showSpecialtyModal && (
               <div className="fixed inset-0 bg-black/50 flex items-end z-50" onClick={() => setShowSpecialtyModal(false)}>
@@ -521,83 +599,116 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
           </div>
         )}
 
-        {/* Localisation (médecin) */}
-        {userType === 'doctor' && (
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
-              <span className="flex items-center gap-1"><MapPin size={11} /> Localisation *</span>
-            </label>
-            <select name="location" value={formData.location} onChange={handleChange}
-              className={`w-full px-3 py-2.5 border-2 rounded-xl text-xs focus:outline-none bg-white transition-all ${errors.location ? 'border-red-400' : 'border-gray-200 focus:border-teal-500'}`}>
-              <option value="">-- Sélectionnez votre localisation --</option>
+        {q.id === 'orgName' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">{orgNameLabel}</h3>
+            <input ref={answerRef} type="text" value={orgName} onChange={e => setOrgName(e.target.value)}
+              onKeyDown={handleEnter} placeholder={role === 'pharmacist' ? 'Pharmacie Centrale' : 'Labo BioSanté'}
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 placeholder:text-gray-300 placeholder:font-medium" />
+            {errors.orgName && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.orgName}</p>}
+          </div>
+        )}
+
+        {q.id === 'location' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900 flex items-center gap-1.5"><MapPin size={18} className="text-teal-600" /> Localisation ?</h3>
+            <select ref={answerRef} value={location} onChange={e => setLocation(e.target.value)}
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 appearance-none cursor-pointer">
+              <option value="">Choisir votre localisation...</option>
               {LOCATIONS.map(g => (
                 <optgroup key={g.group} label={g.group}>
                   {g.places.map(p => <option key={p} value={p}>{p}</option>)}
                 </optgroup>
               ))}
             </select>
-            {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+            {errors.location && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.location}</p>}
           </div>
         )}
 
-        {/* Mot de passe */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">🔒 Mot de passe * <span className="text-gray-400 font-normal">(8 min)</span></label>
-          <div className={`flex items-center border-2 rounded-xl overflow-hidden transition-all ${errors.password ? 'border-red-400' : 'border-gray-200 focus-within:border-teal-500'}`}>
-            <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange}
-              placeholder="••••••••" className="flex-1 px-3 py-2.5 text-sm outline-none" />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="px-3 text-gray-400">
-              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
+        {q.id === 'email' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">📧 Votre adresse email ?</h3>
+            <input ref={answerRef} type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={handleEnter} placeholder="votre@email.com" autoComplete="email"
+              className="text-xl font-semibold text-gray-900 bg-transparent outline-none border-b-2 border-gray-200 focus:border-teal-600 pb-2 placeholder:text-gray-300 placeholder:font-medium" />
+            {errors.email && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.email}</p>}
           </div>
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-        </div>
+        )}
 
-        {/* Confirmer */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1">🔒 Confirmer *</label>
-          <div className={`flex items-center border-2 rounded-xl overflow-hidden transition-all ${pwMatch === false ? 'border-red-400' : pwMatch === true ? 'border-green-400' : 'border-gray-200 focus-within:border-teal-500'}`}>
-            <input type={showPassword2 ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
-              placeholder="Répétez le mot de passe" className="flex-1 px-3 py-2.5 text-sm outline-none" />
-            <button type="button" onClick={() => setShowPassword2(!showPassword2)} className="px-3 text-gray-400">
-              {showPassword2 ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
+        {q.id === 'password' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">🔒 Créez un mot de passe</h3>
+            <p className="text-xs text-gray-400 font-semibold -mt-2">8 caractères min.</p>
+            <div className="flex items-end gap-2 border-b-2 border-gray-200 focus-within:border-teal-600 pb-2">
+              <input ref={answerRef} type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={handleEnter} placeholder="••••••••" autoComplete="new-password"
+                className="flex-1 min-w-0 text-xl font-semibold text-gray-900 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-medium" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 shrink-0">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.password}</p>}
           </div>
-          {pwMatch === false && <p className="text-red-500 text-xs mt-1">❌ Les mots de passe ne correspondent pas</p>}
-          {pwMatch === true  && <p className="text-green-600 text-xs mt-1">✅ Les mots de passe correspondent</p>}
-        </div>
+        )}
 
-        {/* Conditions */}
-        <div className="flex items-start gap-2">
-          <input type="checkbox" name="acceptTerms" checked={formData.acceptTerms} onChange={handleChange}
-            className="w-3.5 h-3.5 mt-0.5 accent-teal-600 shrink-0" />
-          <label className="text-xs text-gray-500">
-            J'accepte les{' '}
-            <Link href="/terms" className="text-teal-600 font-semibold hover:underline">conditions</Link>
-            {' '}et la{' '}
-            <Link href="/privacy" className="text-teal-600 font-semibold hover:underline">confidentialité</Link>
-          </label>
-        </div>
-        {errors.acceptTerms && <p className="text-red-500 text-xs">{errors.acceptTerms}</p>}
+        {q.id === 'password2' && (
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-black text-gray-900">🔒 Confirmez le mot de passe</h3>
+            <div className="flex items-end gap-2 border-b-2 border-gray-200 focus-within:border-teal-600 pb-2">
+              <input ref={answerRef} type={showPassword2 ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                onKeyDown={handleEnter} placeholder="Répétez le mot de passe" autoComplete="new-password"
+                className="flex-1 min-w-0 text-xl font-semibold text-gray-900 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-medium" />
+              <button type="button" onClick={() => setShowPassword2(!showPassword2)} className="text-gray-400 shrink-0">
+                {showPassword2 ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {pwMatch === false && <p className="text-red-500 text-xs font-semibold">❌ Les mots de passe ne correspondent pas</p>}
+            {pwMatch === true  && <p className="text-green-600 text-xs font-semibold">✅ Les mots de passe correspondent</p>}
+          </div>
+        )}
+
+        {q.id === 'terms' && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xl font-black text-gray-900">Dernière étape</h3>
+            <label className="flex items-start gap-2 text-sm text-gray-600">
+              <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-teal-600 shrink-0" />
+              <span>
+                J'accepte les{' '}
+                <Link href="/terms" className="text-teal-600 font-semibold hover:underline">conditions</Link>
+                {' '}et la{' '}
+                <Link href="/privacy" className="text-teal-600 font-semibold hover:underline">confidentialité</Link>
+              </span>
+            </label>
+            {errors.terms && <p className="text-red-500 text-xs font-semibold">⚠️ {errors.terms}</p>}
+          </div>
+        )}
 
         {errors.submit && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
             <p className="text-red-600 text-sm">{errors.submit}</p>
           </div>
         )}
+      </div>
 
-        <button type="submit" disabled={loading}
-          className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-          {loading
-            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Envoi...</>
-            : '📧 Recevoir le code de vérification →'}
-        </button>
-      </form>
-
-      <p className="text-center text-sm text-gray-500">
-        Déjà un compte ?{' '}
-        <button onClick={onSwitchTab} className="text-teal-600 font-bold hover:underline">Se connecter</button>
-      </p>
+      {/* Navigation */}
+      {q.id !== 'role' && (
+        <div className="flex items-center justify-between">
+          <button onClick={goBack} className="text-sm font-bold text-gray-400 hover:text-gray-700">← Retour</button>
+          <button onClick={goNext} disabled={loading}
+            className="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black py-2.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+            {loading
+              ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Envoi...</>
+              : qIndex === questions.length - 1 ? '📧 Recevoir le code de vérification →' : 'Suivant →'}
+          </button>
+        </div>
+      )}
+      {q.id === 'role' && (
+        <p className="text-center text-sm text-gray-500">
+          Déjà un compte ?{' '}
+          <button onClick={onSwitchTab} className="text-teal-600 font-bold hover:underline">Se connecter</button>
+        </p>
+      )}
     </div>
   );
 }
