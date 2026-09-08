@@ -57,6 +57,16 @@ async function resolveSession(payload: JWTPayload | null): Promise<JWTPayload | 
   }
 }
 
+// L'app mobile n'a pas de stockage de cookie et a donc besoin du JWT dans le
+// corps JSON pour l'Authorization: Bearer des requêtes suivantes. Le client
+// web s'appuie uniquement sur le cookie httpOnly déjà posé par la réponse :
+// lui renvoyer aussi le token en clair dans le JSON exposerait un bearer
+// réutilisable à toute XSS (voir audit RA-02). Ce header est envoyé
+// explicitement par mobile/lib/api.ts.
+export function isMobileClient(req: Request): boolean {
+  return req.headers.get('x-client-platform') === 'mobile';
+}
+
 export async function getAuthUser(req?: Request): Promise<JWTPayload | null> {
   // 1. Bearer token from Authorization header (mobile)
   if (req) {

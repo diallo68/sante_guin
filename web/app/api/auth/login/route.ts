@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
-import { signToken, JWT_COOKIE } from '@/lib/auth';
+import { signToken, JWT_COOKIE, isMobileClient } from '@/lib/auth';
 import User from '@/models/User';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
 
@@ -75,8 +75,12 @@ export async function POST(req: NextRequest) {
       tokenVersion: user.tokenVersion ?? 0,
     });
 
+    // Le web s'appuie uniquement sur le cookie httpOnly posé ci-dessous ; lui
+    // renvoyer aussi le JWT en clair exposerait un bearer réutilisable à
+    // toute XSS (audit RA-02). Seul mobile (sans stockage de cookie) reçoit
+    // le token dans le corps JSON, identifié par son header dédié.
     const response = NextResponse.json({
-      token, // included for mobile Bearer auth
+      ...(isMobileClient(req) ? { token } : {}),
       user: {
         id: user._id,
         firstName: user.firstName,

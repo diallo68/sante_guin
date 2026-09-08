@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
-import { getAuthUser, signToken, JWT_COOKIE } from '@/lib/auth';
+import { getAuthUser, signToken, JWT_COOKIE, isMobileClient } from '@/lib/auth';
 import User from '@/models/User';
 
 export async function PUT(req: NextRequest) {
@@ -47,7 +47,14 @@ export async function PUT(req: NextRequest) {
       tokenVersion: user.tokenVersion,
     });
 
-    const response = NextResponse.json({ message: 'Mot de passe modifié avec succès', token });
+    // Le web s'appuie sur le cookie httpOnly re-posé ci-dessous ; ne pas lui
+    // renvoyer aussi le JWT en clair (audit RA-02, même correction que le
+    // login). Mobile (sans cookie) recevrait le token si cette route lui
+    // devient un jour accessible.
+    const response = NextResponse.json({
+      message: 'Mot de passe modifié avec succès',
+      ...(isMobileClient(req) ? { token } : {}),
+    });
     response.cookies.set(JWT_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
