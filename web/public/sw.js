@@ -1,8 +1,10 @@
 // v2 : le cache v1 pouvait contenir des réponses API sensibles (voir audit
-// S08) ; changer de nom force sa suppression par le handler 'activate'
+// S08) ; v3 : le cache v2 pouvait contenir d'anciens documents patients /
+// pièces jointes sous `/uploads/patients|conversations/` (voir audit
+// RA-05) ; changer de nom force sa suppression par le handler 'activate'
 // ci-dessous plutôt que de le laisser traîner indéfiniment chez les
 // utilisateurs déjà installés.
-const CACHE_NAME = 'mondocteur-v2';
+const CACHE_NAME = 'mondocteur-v3';
 const OFFLINE_URL = '/offline';
 
 // Ressources à mettre en cache immédiatement à l'installation
@@ -65,6 +67,19 @@ function isPublicApi(pathname) {
   return PUBLIC_API_PREFIXES.some(p => pathname.startsWith(p));
 }
 
+// D'anciens documents patients / pièces jointes de conversation (envoyés
+// avant le passage au stockage privé) peuvent encore résider sous
+// `/uploads/patients/` et `/uploads/conversations/` — voir audit RA-05.
+// Contrairement à `/uploads/doctors/` (photos de profil, publiques par
+// nature), ces chemins ne doivent jamais être mis dans le cache partagé du
+// service worker, où un autre utilisateur du même appareil pourrait les
+// retrouver hors ligne.
+const SENSITIVE_UPLOAD_PREFIXES = ['/uploads/patients/', '/uploads/conversations/'];
+
+function isSensitiveUpload(pathname) {
+  return SENSITIVE_UPLOAD_PREFIXES.some(p => pathname.startsWith(p));
+}
+
 // ── Fetch : stratégie intelligente selon le type de ressource ──
 self.addEventListener('fetch', event => {
   const { request } = event;
@@ -80,6 +95,13 @@ self.addEventListener('fetch', event => {
     } else {
       event.respondWith(networkFirstWithQueue(request, isPublicApi(url.pathname)));
     }
+    return;
+  }
+
+  // Anciens documents patients / pièces jointes : jamais mis en cache,
+  // même s'ils correspondent par ailleurs à une extension d'image ci-dessous.
+  if (isSensitiveUpload(url.pathname)) {
+    event.respondWith(networkOnly(request));
     return;
   }
 
