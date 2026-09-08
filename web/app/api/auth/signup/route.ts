@@ -25,13 +25,27 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName } = body;
+    const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName, dob, city } = body;
 
     if (!firstName || !lastName || !password) {
       return NextResponse.json(
         { error: 'Prénom, nom et mot de passe sont requis' },
         { status: 400 }
       );
+    }
+
+    // `dob`/`city` restent facultatifs pour ne pas casser le client mobile,
+    // qui ne les envoie pas encore — mais si fournis (formulaire web), ils
+    // doivent être valides.
+    let dobDate: Date | undefined;
+    if (dob !== undefined) {
+      dobDate = new Date(dob);
+      if (Number.isNaN(dobDate.getTime())) {
+        return NextResponse.json({ error: 'Date de naissance invalide' }, { status: 400 });
+      }
+      if (dobDate > new Date()) {
+        return NextResponse.json({ error: 'Date de naissance invalide' }, { status: 400 });
+      }
     }
 
     if (typeof role !== 'string' || !PUBLIC_SIGNUP_ROLES.includes(role as PublicSignupRole)) {
@@ -75,6 +89,8 @@ export async function POST(req: NextRequest) {
       firstName,
       lastName,
       email,
+      dob: dobDate,
+      city: typeof city === 'string' && city.trim() ? city.trim() : undefined,
       passwordHash,
       role: validatedRole,
       isVerified: false,

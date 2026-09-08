@@ -6,6 +6,8 @@ export interface IUser extends Document {
   lastName: string;
   email?: string;
   phone?: string;
+  dob?: Date;
+  city?: string;
   passwordHash: string;
   role: 'patient' | 'doctor' | 'pharmacist' | 'laboratorist' | 'admin';
   isVerified: boolean;
@@ -38,6 +40,11 @@ const UserSchema = new Schema<IUser>(
     // étaient silencieusement ignorées par Mongoose (mode `strict` par
     // défaut) — voir audit B10.
     phone: { type: String, sparse: true, trim: true },
+    // Facultatifs côté schéma (le mobile n'envoie encore ni l'un ni
+    // l'autre à l'inscription) mais demandés systématiquement par le
+    // formulaire web conversationnel — voir /api/auth/signup.
+    dob: { type: Date },
+    city: { type: String, trim: true },
     passwordHash: { type: String, required: true },
     role: {
       type: String,
