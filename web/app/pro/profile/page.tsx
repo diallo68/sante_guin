@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { User, Mail, Phone, MapPin, Edit, Save, X, Loader2, AlertCircle, Camera, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Edit, Save, X, Loader2, AlertCircle, Camera, CheckCircle } from 'lucide-react';
 
 interface DoctorProfile {
   _id: string;

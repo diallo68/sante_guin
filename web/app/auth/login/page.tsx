@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, X, Check, MapPin } from 'lucide-react';
 
@@ -59,7 +59,6 @@ interface Question { id: QuestionId }
 // Page principale
 // ────────────────────────────────────────────────────────────
 export default function AuthPage() {
-  const router       = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>(() =>
     searchParams.get('tab') === 'register' ? 'register' : 'login'

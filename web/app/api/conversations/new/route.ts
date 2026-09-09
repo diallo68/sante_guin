@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Conversation from '@/models/Conversation';
-import Message from '@/models/Message';
 import User from '@/models/User';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';

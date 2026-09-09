@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Building2, Stethoscope, Package, FlaskConical, MapPin, Phone, Mail,
-  Clock, CheckCircle, ChevronRight, ChevronLeft, X, Check, Users, Truck,
+  Clock, CheckCircle, ChevronRight, ChevronLeft, Check, Users,
 } from 'lucide-react';
 
 const LOCATIONS = [

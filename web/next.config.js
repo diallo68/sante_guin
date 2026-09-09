@@ -1,9 +1,19 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   images: {
     unoptimized: true,
   },
+  // Le repo a un package-lock.json à sa racine (dépendances de tooling
+  // sans rapport avec l'app, ex. Puppeteer) en plus du pnpm-lock.yaml de
+  // web/ : Next.js détecte les deux et infère par défaut la racine du
+  // repo comme "workspace root" pour le traçage des fichiers du build
+  // standalone, au lieu de web/ — voir audit RA-12. Fixé explicitement
+  // pour lever l'ambiguïté plutôt que de supprimer le lockfile racine,
+  // dont dépend un tooling qui n'a rien à voir avec cette app.
+  outputFileTracingRoot: path.join(__dirname),
   // ESLint est maintenant configuré (eslint.config.mjs) et ne remonte plus
   // aucune erreur bloquante sur le code existant (126 avertissements
   // restants, volontairement non bloquants — voir eslint.config.mjs) : le

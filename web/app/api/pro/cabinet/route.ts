@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import BusinessProfile from '@/models/BusinessProfile';
 import { PRO_ROLES, ProRole } from '@/lib/proAccess';
+import { logError } from '@/lib/logger';
 
 // Champs qu'un professionnel peut renseigner lui-même. `userId`, `isVerified`,
 // `rating`, `reviewCount` et `isActive` sont volontairement exclus : ce sont
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
     const profile = await BusinessProfile.findOne({ userId: user.userId });
     return NextResponse.json({ profile: profile || null });
   } catch (error) {
+    logError('Cabinet GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ profile }, { status: 201 });
   } catch (error) {
+    logError('Cabinet POST error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -91,6 +94,7 @@ export async function PUT(req: NextRequest) {
     if (!profile) return NextResponse.json({ error: 'Profil introuvable.' }, { status: 404 });
     return NextResponse.json({ profile });
   } catch (error) {
+    logError('Cabinet PUT error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
