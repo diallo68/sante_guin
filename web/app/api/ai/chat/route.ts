@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveSubscription } from '@/lib/proAccess';
 import { logError } from '@/lib/logger';
+import { rateLimit } from '@/lib/rateLimit';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -31,6 +32,19 @@ export async function POST(req: NextRequest) {
     const access = await requireActiveSubscription(req);
     if (!access.ok) {
       return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    // Aucun quota n'existait sur cet appel à l'API Groq (payante) : un
+    // abonnement Pro actif suffisait à l'appeler sans limite de fréquence,
+    // ce qui exposait à un usage abusif (script, boucle, credentials
+    // partagés) sans contrôle de coût. Limite par compte, sur la même
+    // infrastructure distribuée que les autres routes — voir audit RA-04.
+    const aiLimit = await rateLimit(`ai-chat:${access.authUser.userId}`, 30, 10 * 60 * 1000);
+    if (!aiLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes vers l\'assistant IA. Réessayez dans quelques minutes.' },
+        { status: 429 }
+      );
     }
 
     const body = await req.json();
