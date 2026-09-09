@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, CheckCircle, Phone, Mail, MapPin, FileText, RefreshCw, X } from 'lucide-react';
+import { CheckCircle, Phone, Mail, MapPin, FileText, RefreshCw, X } from 'lucide-react';
 
 type Status = 'all' | 'pending' | 'contacted' | 'active' | 'rejected';
 

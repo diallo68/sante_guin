@@ -149,7 +149,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           }
         }
       }
-    } catch (_) {}
+    } catch {}
   });
 
   return NextResponse.json({ message }, { status: 201 });

@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Settings, Users, MessageSquare, Lock, ShieldAlert, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Clock, User, Star, LogOut, Menu, X, Building2, Package, FlaskConical, PlusCircle, Users, MessageSquare, Lock, ShieldAlert, BrainCircuit } from 'lucide-react';
 import { logout } from '@/lib/clientLogout';
 
 interface ProLayoutProps {

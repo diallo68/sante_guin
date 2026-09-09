@@ -86,7 +86,6 @@ export default function PatientsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [newPatientId, setNewPatientId] = useState<string | null>(null);
 
   // Upload documents
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -149,7 +148,6 @@ export default function PatientsPage() {
       if (!res.ok) { setSaveError(data.error || 'Erreur'); return; }
 
       const pid = data.record._id;
-      setNewPatientId(pid);
 
       // 2. Uploader les documents si présents
       if (pendingFiles.length > 0) {
@@ -166,7 +164,6 @@ export default function PatientsPage() {
       // 3. Réinitialiser et fermer
       setForm(emptyForm);
       setPendingFiles([]);
-      setNewPatientId(null);
       setShowModal(false);
       load();
     } catch {

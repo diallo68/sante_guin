@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 type Step = 'contact' | 'otp' | 'reset' | 'success';
 
@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       }
       setStep('otp');
       setErrors({});
-    } catch (error) {
+    } catch {
       setErrors({ submit: 'Erreur lors de l\'envoi du code' });
     } finally {
       setLoading(false);
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
       }
       setStep('reset');
       setErrors({});
-    } catch (error) {
+    } catch {
       setErrors({ otp: 'Code OTP invalide' });
     } finally {
       setLoading(false);
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
       }
       setStep('success');
       setErrors({});
-    } catch (error) {
+    } catch {
       setErrors({ submit: 'Erreur lors de la réinitialisation' });
     } finally {
       setLoading(false);
