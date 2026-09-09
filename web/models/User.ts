@@ -15,6 +15,10 @@ export interface IUser extends Document {
   tokenVersion: number;
   otpCode?: string;
   otpExpiry?: Date;
+  // Horodatage de l'acceptation des CGU/politique de confidentialité à
+  // l'inscription — voir audit RA-09. Absent sur les comptes créés avant
+  // l'introduction de ce contrôle serveur.
+  acceptedTermsAt?: Date;
   favorites: {
     doctors: mongoose.Types.ObjectId[];
     pharmacies: mongoose.Types.ObjectId[];
@@ -59,6 +63,7 @@ const UserSchema = new Schema<IUser>(
     tokenVersion: { type: Number, default: 0 },
     otpCode: { type: String },
     otpExpiry: { type: Date },
+    acceptedTermsAt: { type: Date },
     favorites: {
       doctors: [{ type: Schema.Types.ObjectId, ref: 'Doctor' }],
       pharmacies: [{ type: Schema.Types.ObjectId, ref: 'Pharmacy' }],

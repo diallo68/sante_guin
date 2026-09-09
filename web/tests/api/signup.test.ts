@@ -41,6 +41,28 @@ describe('POST /api/auth/signup', () => {
     expect(res.status).toBe(400);
   });
 
+  // Régression RA-09 : la case « J'accepte les conditions » n'était
+  // vérifiée que côté client — rien n'empêchait de créer un compte sans
+  // jamais l'avoir cochée.
+  it('refuse la création d\'un compte sans acceptation des conditions', async () => {
+    const req = jsonRequest('http://localhost/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({
+        firstName: 'Bob',
+        lastName: 'SansCGU',
+        email: 'bob@test.local',
+        password: 'password123',
+        role: 'patient',
+      }),
+    });
+
+    const res = await signup(req);
+    expect(res.status).toBe(400);
+
+    const created = await User.findOne({ email: 'bob@test.local' });
+    expect(created).toBeNull();
+  });
+
   it('crée un compte patient avec un rôle valide', async () => {
     const req = jsonRequest('http://localhost/api/auth/signup', {
       method: 'POST',
@@ -50,6 +72,7 @@ describe('POST /api/auth/signup', () => {
         email: 'alice@test.local',
         password: 'password123',
         role: 'patient',
+        acceptTerms: true,
       }),
     });
 
@@ -60,6 +83,7 @@ describe('POST /api/auth/signup', () => {
     expect(created).not.toBeNull();
     expect(created?.role).toBe('patient');
     expect(created?.isVerified).toBe(false); // en attente de vérification OTP
+    expect(created?.acceptedTermsAt).toBeInstanceOf(Date);
   });
 
   it('crée un compte médecin avec son profil professionnel associé', async () => {
@@ -72,6 +96,7 @@ describe('POST /api/auth/signup', () => {
         password: 'password123',
         role: 'doctor',
         specialties: ['Cardiologue'],
+        acceptTerms: true,
       }),
     });
 
