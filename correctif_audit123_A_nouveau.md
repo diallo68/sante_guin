@@ -1,9 +1,11 @@
 # Correctifs apportés suite au ré-audit du 9 septembre 2026
 
 **Déployé en production** (VM Oracle, `bash web/scripts/deploy-vm.sh`) le
-9 septembre 2026. Vérifié sur `mondocteur.org` : `Content-Security-Policy`
-avec nonce présent, `/profile` sans session redirige toujours vers
-`/auth/login`, site HTTP 200.
+9 septembre 2026, en deux temps (RA-01 à RA-13 puis RA-04/Redis séparément).
+Vérifié sur `mondocteur.org` : `Content-Security-Policy` avec nonce
+présent, `/profile` sans session redirige toujours vers `/auth/login`,
+site HTTP 200, et une tentative de login réelle crée bien les clés
+`login:ip:*`/`login:acct:*` dans Redis (`redis-cli keys`).
 
 Ce document fait le suivi de la remédiation de [`audit123_A_nouveau.md`](audit123_A_nouveau.md),
 qui confirme que la remédiation du premier audit ([`audit123.md`](audit123.md),
