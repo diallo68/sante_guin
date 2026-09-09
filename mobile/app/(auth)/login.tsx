@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, Modal, FlatList,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StyleSheet, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -143,6 +143,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
   const [showLocModal,  setShowLocModal]  = useState(false);
   const [showSpecModal, setShowSpecModal] = useState(false);
   const [specialties, setSpecialties]    = useState<string[]>([]);
+  const [acceptTerms, setAcceptTerms]    = useState(false);
 
   // OTP
   const [otp, setOtp]                     = useState(['','','','','','']);
@@ -176,6 +177,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
     if (userType === 'doctor' && !location) { Alert.alert('Erreur', 'La localisation est requise'); return; }
     if (!password || password.length < 8) { Alert.alert('Erreur', 'Mot de passe : minimum 8 caractères'); return; }
     if (password !== password2) { Alert.alert('Erreur', 'Les mots de passe ne correspondent pas'); return; }
+    if (!acceptTerms) { Alert.alert('Erreur', 'Vous devez accepter les conditions d\'utilisation'); return; }
 
     setLoading(true);
     try {
@@ -186,6 +188,7 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
         role: userType === 'doctor' ? 'doctor' : 'patient',
         specialties: userType === 'doctor' ? specialties : undefined,
         location:    userType === 'doctor' ? location : undefined,
+        acceptTerms,
       });
       setUserId(res.data.userId);
       setVerifyContact(res.data.contact);
@@ -349,6 +352,32 @@ function RegisterForm({ onLogin }: { onLogin: () => void }) {
         {pwMatch === false && <Text style={s.hintError}>❌ Les mots de passe ne correspondent pas</Text>}
         {pwMatch === true  && <Text style={s.hintSuccess}>✅ Correspondent</Text>}
       </View>
+
+      <TouchableOpacity
+        onPress={() => setAcceptTerms(v => !v)}
+        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}
+      >
+        <View style={{
+          width: 20, height: 20, borderRadius: 5, marginTop: 1,
+          borderWidth: 1.5, borderColor: acceptTerms ? '#0d9488' : '#9ca3af',
+          backgroundColor: acceptTerms ? '#0d9488' : 'transparent',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          {acceptTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+        </View>
+        <Text style={{ flex: 1, fontSize: 13, color: '#4b5563', lineHeight: 18 }}>
+          J'accepte les{' '}
+          <Text style={{ color: '#0d9488', fontWeight: '700' }}
+            onPress={() => Linking.openURL('https://mondocteur.org/terms')}>
+            conditions
+          </Text>
+          {' '}et la{' '}
+          <Text style={{ color: '#0d9488', fontWeight: '700' }}
+            onPress={() => Linking.openURL('https://mondocteur.org/privacy')}>
+            confidentialité
+          </Text>
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity onPress={handleSendCode} disabled={loading}
         style={[s.btnPrimary, loading && s.btnDisabled]}>

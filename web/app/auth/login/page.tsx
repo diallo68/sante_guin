@@ -389,6 +389,7 @@ function RegisterForm({ onSwitchTab }: { onSwitchTab: () => void }) {
           location: (role === 'doctor' || role === 'pharmacist' || role === 'laboratorist') ? location : undefined,
           pharmacyName: role === 'pharmacist' ? orgName : undefined,
           laboratoryName: role === 'laboratorist' ? orgName : undefined,
+          acceptTerms,
         }),
       });
       const data = await res.json();

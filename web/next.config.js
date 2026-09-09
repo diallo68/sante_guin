@@ -27,31 +27,16 @@ const nextConfig = {
   output: 'standalone',
 
   // Protections navigateur absentes jusqu'ici (aucune configuration
-  // explicite de CSP, anti-framing, HSTS) — voir audit S21. Le CSP autorise
-  // 'unsafe-inline' pour les scripts : c'est le compromis pragmatique pour
-  // les scripts d'hydratation inline de l'App Router sans passer par un
-  // système de nonce (changement plus large, à part). Il bloque déjà
-  // l'exécution de scripts injectés depuis un domaine externe, qui est le
-  // vecteur principal d'une XSS stockée exploitée à distance.
+  // explicite de CSP, anti-framing, HSTS) — voir audit S21. Le
+  // Content-Security-Policy n'est plus fixé ici : il dépend d'un nonce
+  // généré à chaque requête (voir audit RA-07) et est donc posé
+  // dynamiquement par web/middleware.ts, pas ici où la valeur serait figée
+  // au build. Les en-têtes ci-dessous restent statiques par nature.
   async headers() {
-    const csp = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self' data:",
-      "connect-src 'self'",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "object-src 'none'",
-    ].join('; ');
-
     return [
       {
         source: '/:path*',
         headers: [
-          { key: 'Content-Security-Policy', value: csp },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

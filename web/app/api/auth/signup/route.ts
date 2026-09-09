@@ -26,11 +26,21 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName, dob, city } = body;
+    const { firstName, lastName, email, password, role = 'patient', specialties, location, pharmacyName, laboratoryName, dob, city, acceptTerms } = body;
 
     if (!firstName || !lastName || !password) {
       return NextResponse.json(
         { error: 'Prénom, nom et mot de passe sont requis' },
+        { status: 400 }
+      );
+    }
+
+    // La case « J'accepte les conditions » n'était vérifiée que côté
+    // client (web comme mobile) : rien n'empêchait de créer un compte sans
+    // jamais l'avoir cochée — voir audit RA-09.
+    if (acceptTerms !== true) {
+      return NextResponse.json(
+        { error: 'Vous devez accepter les conditions d\'utilisation' },
         { status: 400 }
       );
     }
@@ -97,6 +107,7 @@ export async function POST(req: NextRequest) {
       isVerified: false,
       otpCode: hashOTP(otp),
       otpExpiry,
+      acceptedTermsAt: new Date(),
     });
 
     // Créer le profil pro selon le rôle
