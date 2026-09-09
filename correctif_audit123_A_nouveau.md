@@ -1,5 +1,10 @@
 # Correctifs apportés suite au ré-audit du 9 septembre 2026
 
+**Déployé en production** (VM Oracle, `bash web/scripts/deploy-vm.sh`) le
+9 septembre 2026. Vérifié sur `mondocteur.org` : `Content-Security-Policy`
+avec nonce présent, `/profile` sans session redirige toujours vers
+`/auth/login`, site HTTP 200.
+
 Ce document fait le suivi de la remédiation de [`audit123_A_nouveau.md`](audit123_A_nouveau.md),
 qui confirme que la remédiation du premier audit ([`audit123.md`](audit123.md),
 voir [`correctif_audit123.md`](correctif_audit123.md)) est bien intégrée dans
