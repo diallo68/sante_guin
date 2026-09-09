@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 });
     }
 
-    const limit = rateLimit(`forgot-password:${clientIp(req)}:${email.toLowerCase()}`, 5, 15 * 60 * 1000);
+    const limit = await rateLimit(`forgot-password:${clientIp(req)}:${email.toLowerCase()}`, 5, 15 * 60 * 1000);
     if (!limit.allowed) {
       return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
     }

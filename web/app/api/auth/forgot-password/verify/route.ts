@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email et code requis' }, { status: 400 });
     }
 
-    const limit = rateLimit(`verify-reset-otp:${email.toLowerCase()}`, 10, 10 * 60 * 1000);
+    const limit = await rateLimit(`verify-reset-otp:${email.toLowerCase()}`, 10, 10 * 60 * 1000);
     if (!limit.allowed) {
       return NextResponse.json({ error: 'Trop de tentatives. Demandez un nouveau code.' }, { status: 429 });
     }

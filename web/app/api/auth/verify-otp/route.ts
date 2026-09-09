@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // Un code à 6 chiffres n'a que 900 000 valeurs possibles : sans limite
     // de tentatives, il est raisonnablement devinable par force brute
     // pendant sa durée de vie de 10 minutes — voir audit S13.
-    const otpLimit = rateLimit(`verify-otp:${userId}`, 10, 10 * 60 * 1000);
+    const otpLimit = await rateLimit(`verify-otp:${userId}`, 10, 10 * 60 * 1000);
     if (!otpLimit.allowed) {
       return NextResponse.json({ error: 'Trop de tentatives. Demandez un nouveau code.' }, { status: 429 });
     }

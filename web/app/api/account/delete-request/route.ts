@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Limite le spam d'emails vers l'administration — voir audit S13.
-  const limit = rateLimit(`delete-request:${clientIp(req)}`, 5, 60 * 60 * 1000);
+  const limit = await rateLimit(`delete-request:${clientIp(req)}`, 5, 60 * 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
   }

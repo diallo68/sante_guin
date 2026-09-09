@@ -9,7 +9,7 @@ import { logError } from '@/lib/logger';
 export async function POST(req: NextRequest) {
   try {
     // Limite le spam de demandes et d'emails admin — voir audit S13.
-    const limit = rateLimit(`subscribe:${clientIp(req)}`, 5, 60 * 60 * 1000);
+    const limit = await rateLimit(`subscribe:${clientIp(req)}`, 5, 60 * 60 * 1000);
     if (!limit.allowed) {
       return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
     }

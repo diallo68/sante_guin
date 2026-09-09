@@ -25,6 +25,11 @@ export default defineConfig({
       JWT_SECRET: 'test-secret-do-not-use-in-production',
       NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
       NODE_ENV: 'test',
+      // Jamais résolu réellement : 'ioredis' est mocké par ioredis-mock
+      // dans tests/setup/testSetup.ts. Juste présent pour que
+      // lib/rateLimit.ts construise un client au lieu de retomber sur le
+      // repli en mémoire — les tests exercent ainsi le vrai code Redis.
+      REDIS_URL: 'redis://127.0.0.1:6399/1',
     },
   },
   resolve: {

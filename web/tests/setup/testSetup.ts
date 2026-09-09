@@ -17,6 +17,16 @@ vi.mock('next/headers', () => ({
   }),
 }));
 
+// lib/rateLimit.ts se connecte à Redis en production (voir audit RA-04) ;
+// ioredis-mock simule un vrai serveur Redis en mémoire, partagé par tous
+// les clients créés dans ce process de test — les tests exercent ainsi le
+// code Redis réel (INCR/PEXPIRE/PTTL) sans dépendre d'un serveur Redis
+// installé localement ni d'un service ajouté à la CI.
+vi.mock('ioredis', async () => {
+  const RedisMock = (await import('ioredis-mock')).default;
+  return { default: RedisMock };
+});
+
 beforeAll(async () => {
   await connectDB();
   // Les tests de réservation concurrente (B03) dépendent de l'index unique
