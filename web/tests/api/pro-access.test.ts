@@ -64,6 +64,57 @@ describe('POST /api/ai/chat — abonnement requis (S10)', () => {
   });
 });
 
+// Régression : aucun quota n'existait sur l'appel à l'API Groq (payante) —
+// un compte pro abonné pouvait l'appeler sans limite de fréquence.
+describe('POST /api/ai/chat — quota de requêtes par compte', () => {
+  it('bloque au-delà de 30 requêtes en 10 minutes pour le même compte', async () => {
+    const { doctor, token } = await createDoctor({ email: 'ai-quota@test.local' });
+    doctor.subscriptionStatus = 'active';
+    doctor.subscriptionExpiresAt = new Date(Date.now() + 86400000);
+    await doctor.save();
+
+    const attempt = () => aiChat(authedRequest('http://localhost/api/ai/chat', token, {
+      method: 'POST',
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'question test' }] }),
+    }));
+
+    const results: number[] = [];
+    for (let i = 0; i < 31; i++) {
+      results.push((await attempt()).status);
+    }
+
+    // Les 30 premières passent le contrôle de quota (elles échouent ensuite
+    // sur GROQ_API_KEY absent en test, peu importe ici) ; la 31e est bloquée
+    // par le rate limit avant même d'atteindre ce contrôle.
+    expect(results.slice(0, 30).every(s => s !== 429)).toBe(true);
+    expect(results[30]).toBe(429);
+  });
+
+  it('n\'affecte pas le quota d\'un autre compte', async () => {
+    const { doctor: doctorA, token: tokenA } = await createDoctor({ email: 'ai-quota-a@test.local' });
+    doctorA.subscriptionStatus = 'active';
+    doctorA.subscriptionExpiresAt = new Date(Date.now() + 86400000);
+    await doctorA.save();
+    const { doctor: doctorB, token: tokenB } = await createDoctor({ email: 'ai-quota-b@test.local' });
+    doctorB.subscriptionStatus = 'active';
+    doctorB.subscriptionExpiresAt = new Date(Date.now() + 86400000);
+    await doctorB.save();
+
+    for (let i = 0; i < 30; i++) {
+      await aiChat(authedRequest('http://localhost/api/ai/chat', tokenA, {
+        method: 'POST',
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'question test' }] }),
+      }));
+    }
+
+    const resB = await aiChat(authedRequest('http://localhost/api/ai/chat', tokenB, {
+      method: 'POST',
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'question test' }] }),
+    }));
+    expect(resB.status).not.toBe(429);
+  });
+});
+
 // Régression S10 : /api/pro/documents était ouvert à tout utilisateur
 // authentifié, y compris un patient.
 describe('GET/POST /api/pro/documents — réservé aux pros (S10)', () => {
