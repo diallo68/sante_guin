@@ -50,7 +50,7 @@ beaucoup plus faible en pratique.
 |---|---|---|---|
 | RA-08 | Middleware décodant le JWT sans vérification de signature | ✅ Corrigé | `web/lib/jwtEdge.ts` (nouveau, vérification `jose` compatible Edge runtime, sans dépendance Mongoose) + `web/middleware.ts` (`verifyTokenEdge()` au lieu d'un simple décodage base64) |
 | RA-09 | `acceptTerms` non contrôlé côté serveur | ✅ Corrigé | `web/app/api/auth/signup/route.ts` — refuse (400) si `acceptTerms !== true`, stocke `acceptedTermsAt` (`web/models/User.ts`). `web/app/auth/login/page.tsx` (web) envoie désormais `acceptTerms` au serveur. `mobile/app/(auth)/login.tsx` : la case n'existait pas du tout côté mobile — ajoutée (checkbox + liens CGU/confidentialité + `acceptTerms` dans la requête) |
-| RA-10 | `/api/stats` public expose le nombre de patients | ⏳ À confirmer avec l'utilisateur | `web/app/api/stats/route.ts` |
+| RA-10 | `/api/stats` public expose le nombre de patients | ✅ Confirmé intentionnel | `web/app/api/stats/route.ts`, affiché sur `app/page.tsx` (page d'accueil publique) comme preuve sociale, au même titre que le nombre de médecins/pharmacies/laboratoires. Un compteur agrégé n'expose aucune donnée individuelle — pas d'action requise |
 | RA-11 | Absence de tests mobiles | ⏳ Ouvert | `mobile/package.json` |
 | RA-12 | Racine workspace ambiguë au build (lockfiles concurrents) | ⏳ Ouvert | lockfiles racine/web, `next.config.js` |
 | RA-13 | Avertissements ESLint persistants | ⏳ Ouvert | plusieurs fichiers web |
