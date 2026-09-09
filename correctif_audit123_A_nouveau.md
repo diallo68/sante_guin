@@ -126,3 +126,44 @@ correctif RA-03) — bloqué par le mode automatique de l'environnement.
 **À vérifier manuellement** (ou dans une session avec les permissions SSH)
 avant de considérer RA-03 pleinement fermé : si Nginx ne pose pas ces deux
 en-têtes exactement ainsi, `clientIp()` reste contournable.
+
+*(Mise à jour du 9 septembre 2026, session suivante : l'accès SSH à la VM a
+depuis été utilisé avec succès dans cette même journée — voir section 6.
+RA-03 reste néanmoins non vérifié explicitement côté config Nginx.)*
+
+## 6. Ré-audit complémentaire (Codex, 9 septembre 2026) — RA-14 à RA-16
+
+Suite donnée à un second passage d'audit, mené avec Codex sur l'état du
+dépôt après RA-01–RA-13 (`main` à `a37295f`), transmis par captures d'écran
+et consigné dans [`audit_codex_2026-09-09.md`](audit_codex_2026-09-09.md).
+3 des 5 points relevés étaient des failles réelles ; 2 étaient déjà réglés.
+
+| # | Constat de l'audit | Statut | Où |
+|---|---|---|---|
+| RA-14 | Injection HTML dans les emails admin (`adminNote`, `nom`/`firstName`, `planName` non échappés) | ✅ Corrigé | `web/app/api/admin/subscription-requests/route.ts` — `escapeHtml()` (déjà utilisé pour le même problème sur `pro/subscribe/route.ts`, audit S19) appliqué aux 3 templates (activation, refus, message libre sans décision) et à leurs sujets d'email |
+| RA-15 | Statut de souscription non validé côté serveur (`findByIdAndUpdate` n'exécute pas les validateurs du schéma) | ✅ Corrigé | `web/app/api/admin/subscription-requests/route.ts` — liste blanche explicite (`pending/contacted/active/rejected`), réponse `400` sur statut invalide |
+| RA-16 | Aucun quota sur `/api/ai/chat` (appel Groq payant) | ✅ Corrigé | `web/app/api/ai/chat/route.ts` — `rateLimit()` (même infra Redis que RA-04), 30 requêtes / 10 min par compte (clé `ai-chat:${userId}`) |
+| — | `REDIS_URL` absent du pipeline de build | ✅ Déjà correct, aucun changement | `.github/workflows/web-ci.yml` (étape `Build`), `web/vitest.config.ts` |
+| — | Tests nécessitant un environnement autorisant `mongodb-memory-server` | ✅ Déjà correct, aucun changement | Limitation propre au bac à sable Codex, pas au dépôt — 107/107 tests passent dans cette session |
+
+**Tests de régression ajoutés** (102 → 107) :
+- `web/tests/api/directory-and-subscription.test.ts` — 2 tests d'échappement HTML (activation + message libre, avec un `nom`/`planName`/`adminNote` contenant `<script>`/`<img onerror>`/lien de phishing, en espionnant `sendViaBrevo` via `vi.mock`) + 1 test de rejet d'un statut hors enum (`400`, base non modifiée)
+- `web/tests/api/pro-access.test.ts` — 2 tests de quota IA (bloque à la 31ᵉ requête en 10 min pour un même compte ; n'affecte pas le quota d'un autre compte)
+
+**Vérifications effectuées** : `pnpm typecheck` (app + tests), `pnpm test`
+(107/107), `pnpm lint` (0 erreur, warnings préexistants inchangés),
+`pnpm build` (succès).
+
+**Déployé en production** (VM Oracle, `bash web/scripts/deploy-vm.sh`) le
+9 septembre 2026, PR [#17](https://github.com/diallo68/sante_guin/pull/17),
+commit `8686ae2`. Vérifié après déploiement :
+- `git log -1` sur la VM confirme `8686ae2` en cours d'exécution ; `https://mondocteur.org/` répond `HTTP 200`.
+- Logs PM2 (`mondocteur-error.log`) inchangés depuis avant le redémarrage — aucune nouvelle erreur émise au démarrage.
+- Requêtes de fumée en production : `POST /api/ai/chat` sans token → `401` (le nouvel import `rateLimit.ts` ne casse pas le chargement du module) ; `POST /api/auth/signup` avec un compte jetable (`deploy-check-*@example.com`) → `201`, email OTP mis en file ; `POST /api/auth/login` avec un mauvais mot de passe → `401`. Aucune de ces requêtes n'a généré de nouvelle ligne dans `mondocteur-error.log`.
+- Compte de test créé lors de cette vérification (`deploy-check-1788947263@example.com`, rôle patient, non vérifié) : laissé en base, à supprimer si besoin depuis l'admin.
+
+**Non vérifié en profondeur dans cette session** : le comportement réel du
+rate limit `/api/ai/chat` avec un compte Pro réellement abonné (le test de
+fumée en production s'est arrêté à la garde d'authentification, `401`) —
+couvert uniquement par les tests automatisés (Redis simulé via
+`ioredis-mock`), pas par une vérification manuelle en conditions réelles.
