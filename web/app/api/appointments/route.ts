@@ -8,6 +8,7 @@ import User from '@/models/User';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 import { sendEmail, emailAppointmentConfirmation } from '@/lib/email';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ appointments });
   } catch (error) {
-    console.error('Appointments list error:', error);
+    logError('Appointments list error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -158,7 +159,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (error) {
-    console.error('Appointment create error:', error);
+    logError('Appointment create error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

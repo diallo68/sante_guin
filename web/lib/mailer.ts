@@ -1,6 +1,7 @@
 // Mailer — Brevo HTTP API (port 443, jamais bloqué par Render/Oracle)
 import { escapeHtml } from './htmlEscape';
 import { sendViaBrevo } from './emailProvider';
+import { logWarn } from './logger';
 
 export async function sendEmail({
   to,
@@ -14,9 +15,12 @@ export async function sendEmail({
   const result = await sendViaBrevo({ to, subject, html });
   if (!result.ok) {
     if (result.error === 'BREVO_API_KEY manquant') {
-      console.warn(`[Brevo skipped — BREVO_API_KEY manquant] To: ${to}`);
+      logWarn(`[Brevo skipped — BREVO_API_KEY manquant] To: ${to}`);
       return;
     }
+    // result.error peut citer le destinataire (réponse d'erreur Brevo) ;
+    // les appelants journalisent cette exception via lib/logger.ts, qui
+    // masque les emails avant écriture — voir audit RA-06.
     throw new Error(result.error);
   }
 }

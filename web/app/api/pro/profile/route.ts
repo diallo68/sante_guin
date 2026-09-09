@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ doctor });
   } catch (error) {
-    console.error('Pro profile GET error:', error);
+    logError('Pro profile GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -59,7 +60,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ doctor });
   } catch (error) {
-    console.error('Pro profile PUT error:', error);
+    logError('Pro profile PUT error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

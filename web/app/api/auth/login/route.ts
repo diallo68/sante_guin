@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db';
 import { signToken, JWT_COOKIE, isMobileClient } from '@/lib/auth';
 import User from '@/models/User';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    logError('Login error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur, veuillez réessayer' },
       { status: 500 }

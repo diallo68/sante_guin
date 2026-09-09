@@ -4,6 +4,7 @@ import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
 import User from '@/models/User';
+import { logError } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -30,7 +31,7 @@ export async function GET() {
       avgRating: Math.round(avgRating * 10) / 10,
     });
   } catch (error) {
-    console.error('Stats error:', error);
+    logError('Stats error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

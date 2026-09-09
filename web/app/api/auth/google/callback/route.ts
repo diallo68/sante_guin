@@ -4,6 +4,7 @@ import { signToken, JWT_COOKIE } from '@/lib/auth';
 import { OAUTH_STATE_COOKIE } from '@/lib/oauthState';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -120,7 +121,7 @@ export async function GET(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error('Google OAuth callback error:', err);
+    logError('Google OAuth callback error:', err);
     return NextResponse.redirect(`${appUrl}/auth/login?error=oauth_server_error`);
   }
 }

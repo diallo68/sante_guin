@@ -43,12 +43,28 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
   return { allowed: true };
 }
 
-// Meilleur effort pour identifier le client derrière un reverse proxy
-// (Render, etc.). Une IP falsifiable ne suffit pas à elle seule contre un
-// attaquant déterminé (voir la clé combinée utilisée par chaque route),
-// mais reste la seule information disponible sans session.
+// Meilleur effort pour identifier le client derrière le reverse proxy Nginx
+// devant l'app (voir audit RA-03). Le premier élément de X-Forwarded-For
+// est celui que le client a lui-même fourni : rien n'empêche un attaquant
+// d'y écrire l'IP de son choix pour se voir attribuer un nouveau quota à
+// chaque tentative. Avec un seul proxy de confiance en amont qui utilise
+// `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` (qui
+// ajoute $remote_addr à la fin de la valeur reçue plutôt que de l'écraser),
+// c'est au contraire le DERNIER élément qui correspond à l'IP TCP vue par
+// Nginx, donc non falsifiable par le client. X-Real-IP (`$remote_addr`,
+// valeur unique) est préféré quand il est présent, pour la même raison.
+//
+// ⚠️ Ceci suppose que Nginx est bien configuré ainsi (voir nginx.conf sur
+// la VM) ; une IP falsifiable ne suffit de toute façon pas à elle seule
+// contre un attaquant déterminé (voir la clé combinée IP+compte utilisée
+// par chaque route).
 export function clientIp(req: NextRequest): string {
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
   const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
+  if (forwarded) {
+    const parts = forwarded.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length > 0) return parts[parts.length - 1];
+  }
+  return 'unknown';
 }

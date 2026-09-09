@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
 import Review from '@/models/Review';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
       reviews: formatted,
     });
   } catch (error) {
-    console.error('Pro reviews GET error:', error);
+    logError('Pro reviews GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

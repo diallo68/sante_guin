@@ -8,6 +8,7 @@ import Laboratory from '@/models/Laboratory';
 import { sendOTPEmail } from '@/lib/mailer';
 import { generateOTP, hashOTP } from '@/lib/otp';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 // Seuls ces rôles peuvent être demandés depuis l'inscription publique.
 // 'admin' est délibérément exclu : les comptes administrateurs sont créés
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Signup error:', error);
+    logError('Signup error:', error);
     return NextResponse.json(
       { error: 'Erreur serveur, veuillez réessayer' },
       { status: 500 }

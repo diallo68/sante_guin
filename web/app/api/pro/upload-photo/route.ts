@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
 import { detectFileKind, safeExtensionFor, IMAGE_KINDS } from '@/lib/fileValidation';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ photoUrl, doctor });
   } catch (error) {
-    console.error('Upload photo error:', error);
+    logError('Upload photo error:', error);
     return NextResponse.json({ error: 'Erreur lors de l\'upload' }, { status: 500 });
   }
 }

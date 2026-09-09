@@ -4,6 +4,7 @@ import User from '@/models/User';
 import { sendOTPEmail } from '@/lib/mailer';
 import { generateOTP, hashOTP } from '@/lib/otp';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Code renvoyé avec succès' });
   } catch (error: any) {
-    console.error('Resend OTP error:', error);
+    logError('Resend OTP error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

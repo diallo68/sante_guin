@@ -9,6 +9,7 @@ import { detectFileKind, safeExtensionFor, DOCUMENT_KINDS } from '@/lib/fileVali
 import { signDownloadToken } from '@/lib/downloadToken';
 import DocumentModel, { IDocument } from '@/models/Document';
 import { PRO_ROLES, ProRole } from '@/lib/proAccess';
+import { logError } from '@/lib/logger';
 
 // Répertoire privé, hors de `public/` : ces fichiers ne sont jamais servis
 // directement par le serveur statique Next.js, seulement via la route de
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ documents: withUrls });
   } catch (error) {
-    console.error('Documents GET error:', error);
+    logError('Documents GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ document: await toClientDoc(req, doc) }, { status: 201 });
   } catch (error) {
-    console.error('Documents POST error:', error);
+    logError('Documents POST error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -137,7 +138,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Documents DELETE error:', error);
+    logError('Documents DELETE error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

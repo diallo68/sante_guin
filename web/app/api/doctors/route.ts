@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Doctor from '@/models/Doctor';
 import { escapeRegex, parsePagination } from '@/lib/queryHelpers';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ doctors, total, page, limit, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error('Doctors list error:', error);
+    logError('Doctors list error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

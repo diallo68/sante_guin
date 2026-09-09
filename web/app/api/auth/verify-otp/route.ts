@@ -4,6 +4,7 @@ import { signToken, JWT_COOKIE } from '@/lib/auth';
 import User from '@/models/User';
 import { hashOTP } from '@/lib/otp';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error: any) {
-    console.error('Verify OTP error:', error);
+    logError('Verify OTP error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import User from '@/models/User';
 import { sendOTPEmail } from '@/lib/mailer';
 import { generateOTP, hashOTP } from '@/lib/otp';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 // Ce dossier (request / verify / reset) remplace le flux entièrement
 // simulé de la page mot de passe oublié : web et mobile enchaînaient des
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Si un compte existe avec cet email, un code a été envoyé.' });
   } catch (error) {
-    console.error('Forgot password request error:', error);
+    logError('Forgot password request error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import { hashOTP } from '@/lib/otp';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 // Vérifie le code sans le consommer, pour donner un retour immédiat avant
 // l'étape de saisie du nouveau mot de passe. La vérification réelle et
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ valid: true });
   } catch (error) {
-    console.error('Verify reset OTP error:', error);
+    logError('Verify reset OTP error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

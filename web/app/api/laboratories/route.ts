@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Laboratory from '@/models/Laboratory';
 import { escapeRegex, parsePagination } from '@/lib/queryHelpers';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ laboratories, total, page, limit, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error('Laboratories list error:', error);
+    logError('Laboratories list error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

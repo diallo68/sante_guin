@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Review from '@/models/Review';
 import Doctor from '@/models/Doctor';
+import { logError } from '@/lib/logger';
 
 // Web et mobile affichent tous deux `patientName`/`date`, mais l'API
 // renvoyait `patientId` (peuplé) et `createdAt` — les deux champs
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ reviews: reviews.map(toReviewDTO) });
   } catch (error) {
-    console.error('Reviews GET error:', error);
+    logError('Reviews GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     await review.populate('patientId', 'firstName lastName');
     return NextResponse.json({ review: toReviewDTO(review.toObject()) }, { status: 201 });
   } catch (error) {
-    console.error('Reviews POST error:', error);
+    logError('Reviews POST error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
