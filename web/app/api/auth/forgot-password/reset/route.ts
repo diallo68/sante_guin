@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import { hashOTP } from '@/lib/otp';
 import { rateLimit } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: 'Mot de passe réinitialisé avec succès' });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logError('Reset password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

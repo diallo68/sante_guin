@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import User from '@/models/User';
+import { logError } from '@/lib/logger';
 
 export async function PUT(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function PUT(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Profile PUT error:', error);
+    logError('Profile PUT error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

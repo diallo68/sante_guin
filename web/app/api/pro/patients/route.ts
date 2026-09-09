@@ -5,6 +5,7 @@ import Appointment from '@/models/Appointment';
 import Doctor from '@/models/Doctor';
 import PatientRecord from '@/models/PatientRecord';
 import { escapeRegex } from '@/lib/queryHelpers';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
       pages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error('Pro patients error:', error);
+    logError('Pro patients error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ record }, { status: 201 });
   } catch (error) {
-    console.error('Create patient error:', error);
+    logError('Create patient error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { escapeHtml } from './htmlEscape';
 import { sendViaBrevo } from './emailProvider';
+import { logWarn } from './logger';
 
 interface EmailPayload {
   to: string;
@@ -10,7 +11,7 @@ interface EmailPayload {
 export async function sendEmail({ to, subject, html }: EmailPayload): Promise<boolean> {
   const result = await sendViaBrevo({ to, subject, html });
   if (!result.ok) {
-    console.warn(`[email] ${result.error}`);
+    logWarn(`[email] ${result.error}`);
     return false;
   }
   return true;

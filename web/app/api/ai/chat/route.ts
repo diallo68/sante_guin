@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveSubscription } from '@/lib/proAccess';
+import { logError } from '@/lib/logger';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      console.error('Groq error:', err);
+      logError('Groq error:', err);
       return NextResponse.json({ error: 'Erreur du service IA' }, { status: 502 });
     }
 
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     const content = data.choices?.[0]?.message?.content || '';
     return NextResponse.json({ content });
   } catch (error) {
-    console.error('AI chat error:', error);
+    logError('AI chat error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

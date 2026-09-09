@@ -5,6 +5,7 @@ import Appointment from '@/models/Appointment';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
+import { logError } from '@/lib/logger';
 
 const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
 
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: 'Rôle inconnu' }, { status: 400 });
   } catch (error) {
-    console.error('Pro dashboard error:', error);
+    logError('Pro dashboard error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

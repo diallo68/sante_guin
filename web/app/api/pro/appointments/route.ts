@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
 import Appointment from '@/models/Appointment';
+import { logError } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ appointments });
   } catch (error) {
-    console.error('Pro appointments GET error:', error);
+    logError('Pro appointments GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -80,7 +81,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ appointment });
   } catch (error) {
-    console.error('Pro appointments PUT error:', error);
+    logError('Pro appointments PUT error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -117,7 +118,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Pro appointments DELETE error:', error);
+    logError('Pro appointments DELETE error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

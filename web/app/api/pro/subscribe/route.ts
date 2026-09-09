@@ -4,6 +4,7 @@ import SubscriptionRequest from '@/models/SubscriptionRequest';
 import { sendEmail } from '@/lib/mailer';
 import { escapeHtml } from '@/lib/htmlEscape';
 import { rateLimit, clientIp } from '@/lib/rateLimit';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id: request._id.toString() }, { status: 201 });
   } catch (error) {
-    console.error('Subscribe error:', error);
+    logError('Subscribe error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

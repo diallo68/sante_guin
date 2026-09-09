@@ -4,6 +4,7 @@ import { getAuthUser } from '@/lib/auth';
 import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
+import { logError } from '@/lib/logger';
 
 const PRO_ROLES = ['doctor', 'pharmacist', 'laboratorist'];
 
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
       subscriptionExpiresAt: profile.subscriptionExpiresAt,
     });
   } catch (error) {
-    console.error('Pro access check error:', error);
+    logError('Pro access check error:', error);
     return NextResponse.json({ isPro: false, reason: 'server_error' }, { status: 500 });
   }
 }

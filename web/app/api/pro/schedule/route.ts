@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import BusinessProfile from '@/models/BusinessProfile';
+import { logError } from '@/lib/logger';
 
 const DEFAULT_SCHEDULE = [
   { day: 'Lundi', startTime: '08:00', endTime: '17:00', isOpen: true },
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ schedule: profile.schedule });
   } catch (error) {
-    console.error('Pro schedule GET error:', error);
+    logError('Pro schedule GET error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
@@ -65,7 +66,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ schedule: profile.schedule });
   } catch (error) {
-    console.error('Pro schedule PUT error:', error);
+    logError('Pro schedule PUT error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

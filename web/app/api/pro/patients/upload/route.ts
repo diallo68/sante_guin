@@ -7,6 +7,7 @@ import { connectDB } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import PatientRecord from '@/models/PatientRecord';
 import { detectFileKind, safeExtensionFor, mimeTypeFor, DOCUMENT_KINDS } from '@/lib/fileValidation';
+import { logError } from '@/lib/logger';
 
 // Répertoire privé — jamais servi directement par le serveur statique.
 const UPLOAD_DIR = path.join(process.cwd(), 'private-uploads', 'patients');
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ document: created });
   } catch (error) {
-    console.error('Upload patient doc error:', error);
+    logError('Upload patient doc error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

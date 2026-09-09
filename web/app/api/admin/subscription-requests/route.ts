@@ -7,6 +7,7 @@ import Doctor from '@/models/Doctor';
 import Pharmacy from '@/models/Pharmacy';
 import Laboratory from '@/models/Laboratory';
 import { sendEmail } from '@/lib/mailer';
+import { logError } from '@/lib/logger';
 
 // Durée d'abonnement selon le plan
 function getExpiryDate(planName: string): Date {
@@ -152,7 +153,7 @@ export async function PATCH(req: NextRequest) {
         }
       }
     } catch (e) {
-      console.error('Erreur désactivation profil Pro:', e);
+      logError('Erreur désactivation profil Pro:', e);
     }
   }
 

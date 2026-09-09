@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { JWT_COOKIE, getAuthUser } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
+import { logError } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
   const response = NextResponse.json({ success: true });
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
       await User.findByIdAndUpdate(authUser.userId, { $inc: { tokenVersion: 1 } });
     }
   } catch (error) {
-    console.error('Logout tokenVersion increment error:', error);
+    logError('Logout tokenVersion increment error:', error);
   }
 
   return response;

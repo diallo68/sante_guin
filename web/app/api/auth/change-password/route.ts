@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/db';
 import { getAuthUser, signToken, JWT_COOKIE, isMobileClient } from '@/lib/auth';
 import User from '@/models/User';
+import { logError } from '@/lib/logger';
 
 export async function PUT(req: NextRequest) {
   try {
@@ -64,7 +65,7 @@ export async function PUT(req: NextRequest) {
     });
     return response;
   } catch (error) {
-    console.error('Change password error:', error);
+    logError('Change password error:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
