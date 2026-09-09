@@ -44,6 +44,22 @@ périmètre de cette remédiation. Le risque réel visé par l'audit
 (exécution de script) est fermé ; l'injection CSS pure reste un vecteur
 beaucoup plus faible en pratique.
 
+**Piège rencontré (RA-12)** : un premier essai avec
+`outputFileTracingRoot: path.join(__dirname)` (web/ lui-même, plutôt que la
+racine du repo déjà inférée par Next.js) supprime bien l'avertissement,
+mais change aussi la structure du build standalone
+(`.next/standalone/server.js` au lieu de `.next/standalone/web/server.js`)
+— ce dont dépendent `web/scripts/deploy-vm.sh` et la configuration PM2 de
+production. Repéré en tentant un déploiement réel sur la VM : `pnpm build`
+et `git pull` s'exécutent sans erreur, mais l'étape de copie des assets
+échoue ensuite (`cp: cannot create directory '.next/standalone/web/.next/
+static/'`) — le script s'arrête avant `pm2 restart` (`set -euo pipefail`),
+donc **aucune coupure** : le processus PM2 en cours continue de servir
+l'ancien code jusqu'à un restart, qui n'a jamais eu lieu. Corrigé en
+pointant `outputFileTracingRoot` vers la racine du repo (`../` depuis
+web/) au lieu de web/ lui-même : même structure de build qu'avant,
+avertissement toujours supprimé.
+
 ## 3. Faibles et informationnelles
 
 | # | Constat de l'audit | Statut | Où |
@@ -52,7 +68,7 @@ beaucoup plus faible en pratique.
 | RA-09 | `acceptTerms` non contrôlé côté serveur | ✅ Corrigé | `web/app/api/auth/signup/route.ts` — refuse (400) si `acceptTerms !== true`, stocke `acceptedTermsAt` (`web/models/User.ts`). `web/app/auth/login/page.tsx` (web) envoie désormais `acceptTerms` au serveur. `mobile/app/(auth)/login.tsx` : la case n'existait pas du tout côté mobile — ajoutée (checkbox + liens CGU/confidentialité + `acceptTerms` dans la requête) |
 | RA-10 | `/api/stats` public expose le nombre de patients | ✅ Confirmé intentionnel | `web/app/api/stats/route.ts`, affiché sur `app/page.tsx` (page d'accueil publique) comme preuve sociale, au même titre que le nombre de médecins/pharmacies/laboratoires. Un compteur agrégé n'expose aucune donnée individuelle — pas d'action requise |
 | RA-11 | Absence de tests mobiles | ⏳ Ouvert (effort séparé, plus large) | `mobile/package.json` |
-| RA-12 | Racine workspace ambiguë au build (lockfiles concurrents) | ✅ Corrigé | `web/next.config.js` — `outputFileTracingRoot: path.join(__dirname)` lève l'ambiguïté entre `package-lock.json` (racine, tooling sans rapport) et `web/pnpm-lock.yaml`, sans supprimer le lockfile racine. Le warning « Next.js inferred your workspace root » a disparu du build |
+| RA-12 | Racine workspace ambiguë au build (lockfiles concurrents) | ✅ Corrigé (voir piège rencontré) | `web/next.config.js` — `outputFileTracingRoot: path.join(__dirname, '..')` déclare explicitement la racine du repo (déjà celle que Next.js inférait) au lieu de laisser Next.js le deviner |
 | RA-13 | Avertissements ESLint persistants | ⚠️ Réduit (108 restants, tous préexistants sauf mention contraire) | Tous les `no-unused-vars` mécaniquement sûrs corrigés (imports d'icônes inutilisés, `catch (error)` sans usage → `catch {}` ou `logError()` quand le catch avalait l'erreur sans aucun log, état mort `newPatientId` dans `app/pro/patients/page.tsx`). Les avertissements `no-unescaped-entities` (cosmétique, aucun impact fonctionnel) et `no-explicit-any`/`exhaustive-deps` (changement de comportement potentiel, pas de simple lint fix) laissés tels quels — décision déjà actée dans la remédiation initiale (« volontairement non bloquants »). `components/InstallAppButton.tsx` : `canInstall` laissé en l'état, son retrait poserait la question produit de savoir si le bouton doit changer d'apparence avant que le prompt d'installation soit disponible — hors périmètre d'un lint fix |
 
 ## 4. Vérifications effectuées dans cette session
