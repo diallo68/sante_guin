@@ -67,6 +67,25 @@ pointant `outputFileTracingRoot` vers la racine du repo (`../` depuis
 web/) au lieu de web/ lui-même : même structure de build qu'avant,
 avertissement toujours supprimé.
 
+**Note RA-11** : couvre ce qui est testable sans rendu React Native complet
+— stockage de session (`lib/auth.ts`, natif via `expo-secure-store` vs.
+web via `localStorage`), client API (`lib/api.ts` : en-tête
+`X-Client-Platform`, injection du Bearer token, déclenchement de
+`triggerUnauthorized()` sur 401), bus d'événements (`lib/authEvents.ts`)
+et calcul d'horaires (`lib/openingHours.ts`, régression B27). `react-native`
+et `expo-secure-store` sont mockés (leurs modules natifs ne s'exécutent
+pas sous Node) — c'est pourquoi vitest reste l'outil (déjà en place côté
+web) plutôt que d'introduire `jest-expo`, qui aurait résolu ça autrement
+mais avec un nouvel outillage.
+
+**Non couvert**, faute de module extractible et testable sans rendu
+d'écran complet (React Testing Library + environnement de rendu React
+Native, hors périmètre ici) : le flux d'upload de documents
+(`app/pro/documents.tsx`, logique `DocumentPicker`/`FormData` intégrée
+directement à l'écran, jamais extraite dans `lib/`) et tout test au niveau
+écran/composant. `pnpm --dir mobile test` passe désormais (21/21) au lieu
+d'échouer faute de fichiers, mais ce n'est pas une couverture exhaustive.
+
 ## 3. Faibles et informationnelles
 
 | # | Constat de l'audit | Statut | Où |
@@ -74,7 +93,7 @@ avertissement toujours supprimé.
 | RA-08 | Middleware décodant le JWT sans vérification de signature | ✅ Corrigé | `web/lib/jwtEdge.ts` (nouveau, vérification `jose` compatible Edge runtime, sans dépendance Mongoose) + `web/middleware.ts` (`verifyTokenEdge()` au lieu d'un simple décodage base64) |
 | RA-09 | `acceptTerms` non contrôlé côté serveur | ✅ Corrigé | `web/app/api/auth/signup/route.ts` — refuse (400) si `acceptTerms !== true`, stocke `acceptedTermsAt` (`web/models/User.ts`). `web/app/auth/login/page.tsx` (web) envoie désormais `acceptTerms` au serveur. `mobile/app/(auth)/login.tsx` : la case n'existait pas du tout côté mobile — ajoutée (checkbox + liens CGU/confidentialité + `acceptTerms` dans la requête) |
 | RA-10 | `/api/stats` public expose le nombre de patients | ✅ Confirmé intentionnel | `web/app/api/stats/route.ts`, affiché sur `app/page.tsx` (page d'accueil publique) comme preuve sociale, au même titre que le nombre de médecins/pharmacies/laboratoires. Un compteur agrégé n'expose aucune donnée individuelle — pas d'action requise |
-| RA-11 | Absence de tests mobiles | ⏳ Ouvert (effort séparé, plus large) | `mobile/package.json` |
+| RA-11 | Absence de tests mobiles | ✅ Corrigé (partiel — voir note) | `mobile/vitest.config.ts` (nouveau), `mobile/lib/__tests__/{auth,api,authEvents,openingHours}.test.ts` (21 tests), `.github/workflows/mobile-ci.yml` (nouveau, typecheck+lint+test sur push/PR touchant `mobile/**`) |
 | RA-12 | Racine workspace ambiguë au build (lockfiles concurrents) | ✅ Corrigé (voir piège rencontré) | `web/next.config.js` — `outputFileTracingRoot: path.join(__dirname, '..')` déclare explicitement la racine du repo (déjà celle que Next.js inférait) au lieu de laisser Next.js le deviner |
 | RA-13 | Avertissements ESLint persistants | ⚠️ Réduit (108 restants, tous préexistants sauf mention contraire) | Tous les `no-unused-vars` mécaniquement sûrs corrigés (imports d'icônes inutilisés, `catch (error)` sans usage → `catch {}` ou `logError()` quand le catch avalait l'erreur sans aucun log, état mort `newPatientId` dans `app/pro/patients/page.tsx`). Les avertissements `no-unescaped-entities` (cosmétique, aucun impact fonctionnel) et `no-explicit-any`/`exhaustive-deps` (changement de comportement potentiel, pas de simple lint fix) laissés tels quels — décision déjà actée dans la remédiation initiale (« volontairement non bloquants »). `components/InstallAppButton.tsx` : `canInstall` laissé en l'état, son retrait poserait la question produit de savoir si le bouton doit changer d'apparence avant que le prompt d'installation soit disponible — hors périmètre d'un lint fix |
 
