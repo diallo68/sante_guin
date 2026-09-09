@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Limite le renvoi d'emails (spam) et empêche de réinitialiser sans
     // fin la fenêtre de tentatives de /verify-otp — voir audit S13.
-    const resendLimit = rateLimit(`resend-otp:${userId}`, 3, 10 * 60 * 1000);
+    const resendLimit = await rateLimit(`resend-otp:${userId}`, 3, 10 * 60 * 1000);
     if (!resendLimit.allowed) {
       return NextResponse.json({ error: 'Trop de demandes. Réessayez plus tard.' }, { status: 429 });
     }

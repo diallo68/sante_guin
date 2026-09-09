@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     // Limite les inscriptions en masse (spam, hachage bcrypt coûteux
     // répété) depuis une même IP — voir audit S13.
-    const signupLimit = rateLimit(`signup:ip:${clientIp(req)}`, 10, 60 * 60 * 1000);
+    const signupLimit = await rateLimit(`signup:ip:${clientIp(req)}`, 10, 60 * 60 * 1000);
     if (!signupLimit.allowed) {
       return NextResponse.json({ error: 'Trop de tentatives. Réessayez plus tard.' }, { status: 429 });
     }

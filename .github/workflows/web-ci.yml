@@ -74,3 +74,7 @@ jobs:
           MONGODB_URI: mongodb://127.0.0.1:27017/ci-build-placeholder
           JWT_SECRET: ci-build-placeholder-secret-never-used-at-runtime
           NEXT_PUBLIC_APP_URL: http://localhost:3000
+          # lib/rateLimit.ts exige REDIS_URL en production (audit RA-04) et
+          # échoue dès l'import sinon — lazyConnect fait que le build n'a
+          # jamais besoin de s'y connecter réellement.
+          REDIS_URL: redis://127.0.0.1:6379/0

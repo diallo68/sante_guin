@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     // variés) et par couple IP+email (attaque ciblée sur un seul compte) —
     // voir audit S13.
     const ip = clientIp(req);
-    const perIp = rateLimit(`login:ip:${ip}`, 30, 15 * 60 * 1000);
-    const perAccount = rateLimit(`login:acct:${ip}:${contact.toLowerCase()}`, 10, 15 * 60 * 1000);
+    const perIp = await rateLimit(`login:ip:${ip}`, 30, 15 * 60 * 1000);
+    const perAccount = await rateLimit(`login:acct:${ip}:${contact.toLowerCase()}`, 10, 15 * 60 * 1000);
     if (!perIp.allowed || !perAccount.allowed) {
       return NextResponse.json(
         { error: 'Trop de tentatives. Réessayez plus tard.' },

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 8 caractères' }, { status: 400 });
     }
 
-    const limit = rateLimit(`reset-password:${email.toLowerCase()}`, 10, 10 * 60 * 1000);
+    const limit = await rateLimit(`reset-password:${email.toLowerCase()}`, 10, 10 * 60 * 1000);
     if (!limit.allowed) {
       return NextResponse.json({ error: 'Trop de tentatives. Demandez un nouveau code.' }, { status: 429 });
     }

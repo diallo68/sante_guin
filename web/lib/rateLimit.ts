@@ -1,17 +1,35 @@
 import { NextRequest } from 'next/server';
+import Redis from 'ioredis';
+import { logError } from './logger';
 
-// Limitation de fréquence en mémoire, par processus de serveur. Ce n'est
-// pas une solution distribuée (un déploiement multi-instance a une limite
-// par instance, pas globale) mais ça réduit très nettement le coût nul des
-// attaques automatisées (force brute sur mot de passe, épuisement d'OTP,
-// spam d'inscription) qui existait auparavant — voir audit S13. Une
-// vraie solution (Redis, etc.) reste préférable à grande échelle.
+// Limitation de fréquence distribuée via Redis — voir audit RA-04. La
+// version précédente (une Map en mémoire par processus) ne partageait pas
+// les compteurs entre instances : chacune avait sa propre limite, ce qui
+// multiplie le budget réel disponible à un attaquant par le nombre
+// d'instances. Redis obligatoire en production (échec au démarrage sinon,
+// même logique que MONGODB_URI/JWT_SECRET) ; en développement local sans
+// Redis installé, on retombe sur l'ancienne limite en mémoire pour ne pas
+// bloquer `pnpm dev` — elle protège quand même contre un bourrage trivial
+// en solo, juste pas de façon distribuée.
+const REDIS_URL = process.env.REDIS_URL;
+
+if (!REDIS_URL && process.env.NODE_ENV === 'production') {
+  throw new Error('REDIS_URL requis en production pour le rate limiting distribué (voir audit RA-04)');
+}
+
+// `lazyConnect` : ne tente la connexion qu'au premier appel Redis réel, pas
+// à la construction du client — évite des tentatives de connexion bruyantes
+// pendant `next build` (qui importe ce module sans jamais l'utiliser).
+// `maxRetriesPerRequest: 1` : un rate limit qui échoue doit basculer vite
+// sur le repli mémoire plutôt que de faire attendre une requête de login.
+const redis = REDIS_URL
+  ? new Redis(REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 })
+  : null;
+
+// ── Repli en mémoire (développement local sans Redis, ou Redis en panne) ──
 const buckets = new Map<string, { count: number; resetAt: number }>();
-
-// Purge périodique pour éviter une fuite mémoire lente sur un processus
-// long-vivant avec beaucoup de clés différentes (IP variées).
 let lastSweep = Date.now();
-function sweep() {
+function sweepLocal() {
   const now = Date.now();
   if (now - lastSweep < 60_000) return;
   lastSweep = now;
@@ -19,14 +37,8 @@ function sweep() {
     if (now > bucket.resetAt) buckets.delete(key);
   }
 }
-
-export interface RateLimitResult {
-  allowed: boolean;
-  retryAfterSeconds?: number;
-}
-
-export function rateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
-  sweep();
+function rateLimitLocal(key: string, limit: number, windowMs: number): RateLimitResult {
+  sweepLocal();
   const now = Date.now();
   const bucket = buckets.get(key);
 
@@ -34,13 +46,44 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
     buckets.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true };
   }
-
   if (bucket.count >= limit) {
     return { allowed: false, retryAfterSeconds: Math.ceil((bucket.resetAt - now) / 1000) };
   }
-
   bucket.count += 1;
   return { allowed: true };
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  retryAfterSeconds?: number;
+}
+
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+  if (!redis) return rateLimitLocal(key, limit, windowMs);
+
+  try {
+    // Compteur à fenêtre fixe : INCR puis PEXPIRE seulement sur le premier
+    // coup (count === 1) pour ne pas repousser la fenêtre à chaque requête.
+    // Léger risque de course sur la toute première requête concurrente
+    // d'une fenêtre (compteur créé sans TTL pendant une fraction de
+    // seconde) — compromis standard, sans impact réel sur l'objectif
+    // (ralentir un bourrage, pas garantir un compte exact au coup près).
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.pexpire(key, windowMs);
+    }
+    if (count > limit) {
+      const ttl = await redis.pttl(key);
+      return { allowed: false, retryAfterSeconds: Math.ceil(Math.max(ttl, 0) / 1000) };
+    }
+    return { allowed: true };
+  } catch (error) {
+    // Best-effort : une panne Redis temporaire ne doit pas transformer
+    // toutes les routes d'auth en 500 — on retombe sur la limite locale
+    // plutôt que de bloquer les utilisateurs légitimes.
+    logError('Redis rate limit error, repli mémoire locale:', error);
+    return rateLimitLocal(key, limit, windowMs);
+  }
 }
 
 // Meilleur effort pour identifier le client derrière le reverse proxy Nginx
