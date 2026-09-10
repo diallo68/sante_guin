@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import ConditionalFooter from '@/components/ConditionalFooter';
 import PWAProvider from '@/components/PWAProvider';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="bg-white text-gray-900">
         <Navbar />
         {children}
+        <ConditionalFooter />
         <PWAProvider />
       </body>
     </html>

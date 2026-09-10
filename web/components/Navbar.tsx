@@ -80,48 +80,58 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <Image src="/logo.png" alt="Mondocteur" width={36} height={36} className="object-contain" />
-            <span className="text-xl font-bold text-gray-900">Mondocteur</span>
+            <span className="text-xl font-bold text-ink-900">Mondocteur</span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex flex-1 items-center gap-4">
-            {/* Barre de recherche — flex-1 */}
-            <form onSubmit={handleSearch} className="flex flex-1 items-center gap-2 bg-gray-100 hover:bg-gray-200 transition rounded-xl px-3 py-2">
-              <Search size={15} className="text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Médecin, spécialité..."
-                className="flex-1 outline-none bg-transparent text-sm text-gray-700 placeholder-gray-400"
-              />
-            </form>
-
-            <Link href="/doctors" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+          <div className="hidden md:flex flex-1 items-center gap-7 ml-4">
+            <Link href="/doctors" className="text-ink-700 hover:text-primary font-medium text-sm whitespace-nowrap transition">
               Médecins
             </Link>
-            <Link href="/pharmacies" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+            <Link href="/pharmacies" className="text-ink-700 hover:text-primary font-medium text-sm whitespace-nowrap transition">
               Pharmacies
             </Link>
-            <Link href="/laboratories" className="text-gray-600 hover:text-gray-900 font-medium text-sm whitespace-nowrap">
+            <Link href="/laboratories" className="text-ink-700 hover:text-primary font-medium text-sm whitespace-nowrap transition">
               Laboratoires
             </Link>
+            <Link href="/comment-ca-marche" className="text-ink-700 hover:text-primary font-medium text-sm whitespace-nowrap transition">
+              Comment ça marche
+            </Link>
             {user && (user.role === 'doctor' || user.role === 'pharmacist' || user.role === 'laboratorist') && (
-              <Link href="/pro/cabinet" className="text-teal-700 hover:text-teal-900 font-semibold text-sm whitespace-nowrap">
+              <Link href="/pro/cabinet" className="text-primary hover:text-ink-900 font-semibold text-sm whitespace-nowrap">
                 {user.role === 'pharmacist' ? 'Ma Pharmacie' : user.role === 'laboratorist' ? 'Mon Laboratoire' : 'Mon Cabinet'}
               </Link>
             )}
 
+            {/* Recherche rapide — compacte, mise en avant sur la page d'accueil */}
+            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-mist-50 hover:bg-mist-100 transition rounded-full px-3 py-1.5 w-44 focus-within:w-56 focus-within:ring-1 focus-within:ring-primary/40">
+              <Search size={14} className="text-ink-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Rechercher..."
+                className="flex-1 outline-none bg-transparent text-sm text-ink-700 placeholder-ink-400 min-w-0"
+              />
+            </form>
+
+            <div className="ml-auto flex items-center gap-5">
+              {!user && (
+                <Link href="/pro-avantages" className="text-primary hover:text-ink-900 font-semibold text-sm whitespace-nowrap transition">
+                  Espace Pro
+                </Link>
+              )}
+
             {loading ? (
-              <div className="w-24 h-9 bg-gray-100 rounded-lg animate-pulse" />
+              <div className="w-24 h-9 bg-mist-50 rounded-full animate-pulse" />
             ) : user ? (
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-mist-50 hover:bg-mist-100 rounded-full transition"
                 >
                   <div className="relative">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
                       {user.firstName[0]}{user.lastName[0]}
                     </div>
                     {(unread + pendingRequests) > 0 && (
@@ -130,8 +140,8 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
-                  <span className="font-semibold text-gray-900">{user.firstName}</span>
-                  <ChevronDown size={16} className="text-gray-500" />
+                  <span className="font-semibold text-ink-900">{user.firstName}</span>
+                  <ChevronDown size={16} className="text-ink-400" />
                 </button>
 
                 {dropdownOpen && (
@@ -195,12 +205,11 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-3">
-                <Link href="/auth/login" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold transition">
-                  Connexion
-                </Link>
-              </div>
+              <Link href="/auth/login" className="px-5 py-2 border-2 border-primary text-primary rounded-full hover:bg-primary hover:text-white font-semibold text-sm transition">
+                Connexion
+              </Link>
             )}
+            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -236,9 +245,17 @@ export default function Navbar() {
           <Link href="/laboratories" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
             Laboratoires
           </Link>
+          <Link href="/comment-ca-marche" onClick={() => setMenuOpen(false)} className="block py-2 text-gray-700 font-medium">
+            Comment ça marche
+          </Link>
           {user && (user.role === 'doctor' || user.role === 'pharmacist' || user.role === 'laboratorist') && (
-            <Link href="/pro/cabinet" onClick={() => setMenuOpen(false)} className="block py-2 text-teal-700 font-semibold">
+            <Link href="/pro/cabinet" onClick={() => setMenuOpen(false)} className="block py-2 text-primary font-semibold">
               {user.role === 'pharmacist' ? 'Ma Pharmacie' : user.role === 'laboratorist' ? 'Mon Laboratoire' : 'Mon Cabinet'}
+            </Link>
+          )}
+          {!user && (
+            <Link href="/pro-avantages" onClick={() => setMenuOpen(false)} className="block py-2 text-primary font-semibold">
+              Espace Pro
             </Link>
           )}
           <div className="border-t border-gray-200 pt-3">
@@ -272,7 +289,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="block py-2 text-teal-600 font-semibold">
+                <Link href="/auth/login" onClick={() => setMenuOpen(false)} className="block py-2 text-primary font-semibold">
                   Connexion
                 </Link>
               </>
