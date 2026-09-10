@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator,
+  View, Text, ScrollView, TextInput, TouchableOpacity, StatusBar, ActivityIndicator, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,13 +8,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
-// ─── Tokens ───────────────────────────────────────────────────────────────────
+// ─── Tokens — charte Mondocteur (cf. maquettes web/mobile) ────────────────────
 const C = {
-  teal600:  '#0d9488',
+  teal600:  '#0d7a86',   // primaire (boutons, accents)
+  teal700:  '#0b6169',
   teal200:  '#99f6e4',
   teal50:   '#f0fdfa',
   tealDark: '#0f2a2a',   // banner Pro background
   tealMid:  '#134e4a',
+  ink900:   '#0b2a3a',   // titres
+  ink400:   '#5b7c8a',   // texte secondaire
+  mist50:   '#f6fafa',   // fond clair
+  mist100:  '#eef6f6',
   slate50:  '#f8fafc',
   slate100: '#f1f5f9',
   slate200: '#e2e8f0',
@@ -30,6 +35,8 @@ const C = {
   amber400: '#fbbf24',
   white:    '#ffffff',
 };
+
+const QUICK_ACCESS = ['Généraliste', 'Pédiatre', 'Cardiologue'];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Doctor    { _id:string; firstName:string; lastName:string; specialty:string; city:string; rating:number; reviewCount:number; openTime?:string; closeTime?:string; }
@@ -179,121 +186,180 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top','left','right']} style={{ flex:1, backgroundColor:C.teal600 }}>
-      <StatusBar barStyle="light-content" backgroundColor={C.teal600} />
+    <SafeAreaView edges={['top','left','right']} style={{ flex:1, backgroundColor:C.mist50 }}>
+      <StatusBar barStyle="dark-content" backgroundColor={C.mist50} />
 
-      <ScrollView style={{ flex:1, backgroundColor:C.slate50 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:40 }}>
+      <ScrollView style={{ flex:1, backgroundColor:C.white }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom:40 }}>
 
         {/* ══ 1. HERO ═══════════════════════════════════════════════════ */}
-        <View style={{ backgroundColor:C.teal600, paddingHorizontal:22, paddingTop:14, paddingBottom:56, borderBottomLeftRadius:34, borderBottomRightRadius:34 }}>
+        <View style={{ backgroundColor:C.mist50, paddingHorizontal:22, paddingTop:10, paddingBottom:26 }}>
 
           {/* Top row */}
-          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:28 }}>
+          <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
             <View>
-              <View style={{ flexDirection:'row', alignItems:'center', gap:6, marginBottom:3 }}>
-                <Ionicons name="hand-left-outline" size={13} color="rgba(153,246,228,0.85)" />
-                <Text style={{ color:'rgba(153,246,228,0.85)', fontSize:11, fontWeight:'700', letterSpacing:1.5, textTransform:'uppercase' }}>
-                  {user ? `Bonjour, ${user.firstName}` : 'Bienvenue'}
-                </Text>
-              </View>
-              <Text style={{ color:C.white, fontSize:21, fontWeight:'800', letterSpacing:-0.3 }}>MonDocteur</Text>
+              <Text style={{ color:C.teal600, fontSize:11, fontWeight:'800', letterSpacing:1.5, textTransform:'uppercase' }}>
+                Santé en Guinée
+              </Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/profile')}
-              style={{ width:46, height:46, borderRadius:23, backgroundColor:'#2563eb', alignItems:'center', justifyContent:'center', shadowColor:'#1d4ed8', shadowOpacity:0.5, shadowRadius:8, elevation:6 }}
+              style={{ width:44, height:44, borderRadius:22, backgroundColor:C.white, alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:C.slate100 }}
             >
-              <Ionicons name="settings" size={22} color={C.white} />
+              <Ionicons name={user ? 'person' : 'settings-outline'} size={20} color={C.teal600} />
             </TouchableOpacity>
           </View>
 
           {/* Headline */}
-          <Text style={{ color:C.white, fontSize:38, fontWeight:'900', lineHeight:42, letterSpacing:-1, marginBottom:28 }}>
-            Votre santé,{'\n'}<Text style={{ color:C.teal200 }}>entre de bonnes{'\n'}mains.</Text>
+          <Text style={{ color:C.ink900, fontSize:32, fontWeight:'900', lineHeight:36, letterSpacing:-0.5, marginBottom:10 }}>
+            Votre santé,{'\n'}<Text style={{ color:C.teal600 }}>simplement.</Text>
+          </Text>
+          <Text style={{ color:C.ink400, fontSize:14, lineHeight:20, marginBottom:18 }}>
+            Trouvez un professionnel de santé près de chez vous et prenez rendez-vous en quelques minutes.
           </Text>
 
-          {/* ① Search bar */}
-          <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:C.white, borderRadius:50, paddingVertical:5, paddingLeft:16, paddingRight:5, shadowColor:'#000', shadowOpacity:0.18, shadowRadius:14, elevation:8 }}>
-            <Ionicons name="search" size={20} color={C.slate400} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Médecin, spécialité, pharmacie..."
-              placeholderTextColor={C.slate400}
-              returnKeyType="search"
-              onSubmitEditing={handleSearch}
-              style={{ flex:1, paddingVertical:11, paddingHorizontal:10, fontSize:14, color:C.slate800 }}
+          {/* Illustration */}
+          <View style={{ borderRadius:20, overflow:'hidden', marginBottom:18, height:170 }}>
+            <Image
+              source={require('@/assets/marketing/hero-illustration.jpg')}
+              style={{ width:'100%', height:'100%' }}
+              resizeMode="cover"
             />
-            <TouchableOpacity onPress={handleSearch} style={{ width:44, height:44, borderRadius:22, backgroundColor:C.teal600, alignItems:'center', justifyContent:'center' }}>
-              <Ionicons name="arrow-forward" size={20} color={C.white} />
+          </View>
+
+          {/* Search inputs */}
+          <View style={{ gap:10, marginBottom:14 }}>
+            <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:C.white, borderRadius:16, paddingHorizontal:14, borderWidth:1, borderColor:C.slate100 }}>
+              <Ionicons name="search" size={18} color={C.slate400} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Professionnel ou spécialité"
+                placeholderTextColor={C.slate400}
+                returnKeyType="search"
+                onSubmitEditing={handleSearch}
+                style={{ flex:1, paddingVertical:13, paddingHorizontal:10, fontSize:14, color:C.slate800 }}
+              />
+            </View>
+            <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:C.white, borderRadius:16, paddingHorizontal:14, borderWidth:1, borderColor:C.slate100 }}>
+              <Ionicons name="location-outline" size={18} color={C.slate400} />
+              <TextInput
+                placeholder="Ville ou quartier"
+                placeholderTextColor={C.slate400}
+                style={{ flex:1, paddingVertical:13, paddingHorizontal:10, fontSize:14, color:C.slate800 }}
+              />
+            </View>
+            <TouchableOpacity onPress={handleSearch} style={{ backgroundColor:C.teal600, borderRadius:16, paddingVertical:14, alignItems:'center' }}>
+              <Text style={{ color:C.white, fontWeight:'800', fontSize:14 }}>Rechercher</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Accès rapides */}
+          <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8 }}>
+            {QUICK_ACCESS.map(label => (
+              <TouchableOpacity
+                key={label}
+                onPress={() => router.push(`/(tabs)/doctors?search=${encodeURIComponent(label)}` as any)}
+                style={{ backgroundColor:C.mist100, borderRadius:20, paddingHorizontal:14, paddingVertical:8 }}
+              >
+                <Text style={{ fontSize:12, fontWeight:'700', color:C.teal700 }}>{label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* ══ 2. MONDOCTEUR PRO (dark banner) ═══════════════════════════ */}
-        <View style={{ paddingHorizontal:18, marginTop:-28, zIndex:10 }}>
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={{ backgroundColor:C.tealDark, borderRadius:22, padding:18, flexDirection:'row', alignItems:'center', justifyContent:'space-between', shadowColor:'#000', shadowOpacity:0.25, shadowRadius:18, elevation:10 }}
-          >
-            {/* Left */}
-            <View style={{ flexDirection:'row', alignItems:'center', gap:14, flex:1 }}>
-              <View style={{ width:46, height:46, borderRadius:13, backgroundColor:'rgba(13,148,136,0.25)', alignItems:'center', justifyContent:'center' }}>
-                <Ionicons name="fitness" size={24} color={C.teal200} />
+        {/* ══ 2. ACCÈS SERVICES ═══════════════════════════════════════ */}
+        <View style={{ paddingHorizontal:18, marginTop:6, gap:10 }}>
+          {[
+            { label:'Médecins', desc:'Trouvez un professionnel de santé près de chez vous', icon:'person-outline' as const, href:'/(tabs)/doctors' as const },
+            { label:'Pharmacies', desc:'Trouvez une pharmacie à proximité', icon:'medkit-outline' as const, href:'/(tabs)/pharmacies' as const },
+            { label:'Laboratoires', desc:'Trouvez un laboratoire près de chez vous', icon:'flask-outline' as const, href:'/(tabs)/laboratories' as const },
+          ].map(item => (
+            <TouchableOpacity
+              key={item.label}
+              onPress={() => router.push(item.href as any)}
+              activeOpacity={0.85}
+              style={{ flexDirection:'row', alignItems:'center', gap:14, backgroundColor:C.white, borderRadius:18, padding:16, borderWidth:1, borderColor:C.slate100 }}
+            >
+              <View style={{ width:44, height:44, borderRadius:14, backgroundColor:C.mist100, alignItems:'center', justifyContent:'center' }}>
+                <Ionicons name={item.icon} size={22} color={C.teal600} />
               </View>
               <View style={{ flex:1 }}>
-                <Text style={{ fontSize:9, fontWeight:'800', color:C.teal200, letterSpacing:1.3, textTransform:'uppercase', marginBottom:3 }}>
-                  Pour les professionnels de santé
-                </Text>
-                <Text style={{ fontSize:16, fontWeight:'800', color:C.white, marginBottom:3 }}>
-                  Mondocteur <Text style={{ color:C.teal200 }}>Pro</Text>
-                </Text>
-                <Text style={{ fontSize:11, color:'rgba(153,246,228,0.6)', lineHeight:15 }} numberOfLines={2}>
-                  Gérez votre cabinet, vos patients et votre agenda en un seul endroit.
-                </Text>
+                <Text style={{ fontSize:15, fontWeight:'800', color:C.ink900 }}>{item.label}</Text>
+                <Text style={{ fontSize:12, color:C.ink400, marginTop:1 }}>{item.desc}</Text>
               </View>
-            </View>
-            {/* Right button */}
-            <TouchableOpacity onPress={() => router.push('/pro-avantages')} style={{ backgroundColor:C.teal600, borderRadius:20, paddingHorizontal:14, paddingVertical:9, marginLeft:10, flexShrink:0 }}>
-              <Text style={{ fontSize:12, fontWeight:'700', color:C.white }}>Découvrir →</Text>
+              <Ionicons name="chevron-forward" size={18} color={C.slate400} />
             </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* ══ 3. COMMENT ÇA MARCHE ═══════════════════════════════════ */}
+        <View style={{ paddingHorizontal:18, marginTop:28 }}>
+          <Text style={{ fontSize:19, fontWeight:'900', color:C.ink900, marginBottom:16 }}>Comment ça marche ?</Text>
+          <View style={{ flexDirection:'row', gap:10 }}>
+            {[
+              { n:'1', title:'Recherchez', desc:"Trouvez le professionnel ou l'établissement adapté" },
+              { n:'2', title:'Réservez', desc:'Prenez rendez-vous en quelques minutes' },
+              { n:'3', title:'Consultez', desc:'Rendez-vous sur place le jour choisi' },
+            ].map(step => (
+              <View key={step.n} style={{ flex:1 }}>
+                <View style={{ width:30, height:30, borderRadius:15, backgroundColor:C.mist100, alignItems:'center', justifyContent:'center', marginBottom:8 }}>
+                  <Text style={{ color:C.teal600, fontWeight:'800', fontSize:13 }}>{step.n}</Text>
+                </View>
+                <Text style={{ fontSize:13, fontWeight:'800', color:C.ink900, marginBottom:3 }}>{step.title}</Text>
+                <Text style={{ fontSize:11, color:C.ink400, lineHeight:15 }}>{step.desc}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ══ 4. PATIENTS / PROFESSIONNELS ═══════════════════════════ */}
+        <View style={{ paddingHorizontal:18, marginTop:26, flexDirection:'row', gap:10 }}>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/doctors')} activeOpacity={0.85} style={{ flex:1, backgroundColor:C.mist50, borderRadius:18, padding:14 }}>
+            <View style={{ width:34, height:34, borderRadius:17, backgroundColor:C.mist100, alignItems:'center', justifyContent:'center', marginBottom:8 }}>
+              <Ionicons name="people" size={17} color={C.teal600} />
+            </View>
+            <Text style={{ fontSize:13, fontWeight:'800', color:C.ink900, marginBottom:2 }}>Patients</Text>
+            <Text style={{ fontSize:11, color:C.ink400, lineHeight:15 }}>Accédez facilement aux soins près de chez vous</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/pro-avantages')} activeOpacity={0.85} style={{ flex:1, backgroundColor:C.mist50, borderRadius:18, padding:14 }}>
+            <View style={{ width:34, height:34, borderRadius:17, backgroundColor:C.mist100, alignItems:'center', justifyContent:'center', marginBottom:8 }}>
+              <Ionicons name="person-add" size={17} color={C.teal600} />
+            </View>
+            <Text style={{ fontSize:13, fontWeight:'800', color:C.ink900, marginBottom:2 }}>Professionnels de santé</Text>
+            <Text style={{ fontSize:11, color:C.ink400, lineHeight:15 }}>Développez votre activité et simplifiez la gestion de vos rendez-vous</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ══ 3. HAM — VOTRE COLLABORATEUR IA ══════════════════════════ */}
-        <View style={{ paddingHorizontal:18, marginTop:14 }}>
+        {/* ══ 5. HAM — bandeau compact ═══════════════════════════════ */}
+        <View style={{ paddingHorizontal:18, marginTop:20 }}>
           <TouchableOpacity
+            onPress={() => router.push('/pro/ai')}
             activeOpacity={0.88}
-            style={{ backgroundColor:C.white, borderRadius:22, padding:18, shadowColor:'#000', shadowOpacity:0.06, shadowRadius:12, elevation:4, borderWidth:1, borderColor:C.slate100 }}
+            style={{ backgroundColor:C.tealDark, borderRadius:18, padding:16, flexDirection:'row', alignItems:'center', gap:12 }}
           >
-            <View style={{ flexDirection:'row', alignItems:'center', gap:12, marginBottom:10 }}>
-              <View style={{ width:42, height:42, borderRadius:12, backgroundColor:C.teal50, alignItems:'center', justifyContent:'center' }}>
-                <Ionicons name="sparkles" size={22} color={C.teal600} />
-              </View>
-              <View>
-                <Text style={{ fontSize:18, fontWeight:'900', color:C.teal600, letterSpacing:-0.3 }}>HAM</Text>
-                <Text style={{ fontSize:12, fontWeight:'600', color:C.slate700 }}>Votre collaborateur IA</Text>
-              </View>
+            <View style={{ width:40, height:40, borderRadius:12, overflow:'hidden' }}>
+              <Image source={require('@/assets/marketing/ham-icon.jpg')} style={{ width:'100%', height:'100%' }} resizeMode="cover" />
             </View>
-            <Text style={{ fontSize:13, color:C.slate500, lineHeight:19, marginBottom:12 }}>
-              Posez vos questions médicales, obtenez des conseils intelligents et des orientations assistées par l'IA.
-            </Text>
-            <View style={{ flexDirection:'row', alignItems:'center', gap:4 }}>
-              <Text style={{ fontSize:13, fontWeight:'700', color:C.teal600 }}>En savoir plus</Text>
-              <Ionicons name="arrow-forward-circle" size={16} color={C.teal600} />
+            <View style={{ flex:1 }}>
+              <Text style={{ fontSize:13, fontWeight:'800', color:C.white }}>Ham · Assistant pour professionnels</Text>
+              <Text style={{ fontSize:11, color:'rgba(153,246,228,0.75)', marginTop:2 }} numberOfLines={2}>
+                Votre allié au quotidien pour une meilleure organisation
+              </Text>
             </View>
+            <Ionicons name="chevron-forward" size={18} color={C.teal200} />
           </TouchableOpacity>
         </View>
 
-        {/* ══ 4. PARTENAIRES VÉRIFIÉS ═══════════════════════════════════ */}
-        <View style={{ paddingHorizontal:22, marginTop:28 }}>
+        {/* ══ 6. PARTENAIRES VÉRIFIÉS ═══════════════════════════════════ */}
+        <View style={{ paddingHorizontal:22, marginTop:32 }}>
           {/* Badge */}
           <View style={{ flexDirection:'row', alignItems:'center', gap:6, marginBottom:5 }}>
             <Ionicons name="shield-checkmark" size={13} color={C.teal600} />
             <Text style={{ fontSize:11, fontWeight:'800', letterSpacing:1.4, color:C.teal600, textTransform:'uppercase' }}>Partenaires Vérifiés</Text>
           </View>
           {/* Title + see-all links */}
-          <Text style={{ fontSize:24, fontWeight:'900', color:C.slate900, letterSpacing:-0.5, marginBottom:2 }}>Professionnels de santé</Text>
-          <Text style={{ fontSize:13, color:C.slate500, lineHeight:18, marginBottom:14 }}>
+          <Text style={{ fontSize:24, fontWeight:'900', color:C.ink900, letterSpacing:-0.5, marginBottom:2 }}>Professionnels de santé</Text>
+          <Text style={{ fontSize:13, color:C.ink400, lineHeight:18, marginBottom:14 }}>
             Médecins, pharmacies et laboratoires certifiés, disponibles pour vous
           </Text>
           {/* Quick-nav links row */}
