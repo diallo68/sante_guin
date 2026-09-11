@@ -118,7 +118,7 @@ export default function AIAssistantPage() {
             <Bot className="text-teal-600" size={26} />
             Votre Collaborateur
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">Propulsé par Llama 3.3 · Aide à la décision clinique · Analyse de documents</p>
+          <p className="text-gray-500 text-sm mt-0.5">Aide à la décision clinique · Analyse de documents</p>
         </div>
         {messages.length > 0 && (
           <button

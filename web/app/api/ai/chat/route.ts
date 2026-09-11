@@ -113,7 +113,29 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    const model = image ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
+    // 'llama-3.3-70b-versatile' et 'meta-llama/llama-4-scout-17b-16e-instruct'
+    // ont été retirés du catalogue Groq (404 model_not_found, vérifié le
+    // 2026-09-11) : c'était la cause réelle du « Ham ne répond pas »,
+    // indépendamment de la clé API (valide) ou du quota. Remplacés par les
+    // modèles actuellement servis par ce compte Groq (vu via GET
+    // /openai/v1/models) : openai/gpt-oss-120b pour le texte, qwen/qwen3.8-27b
+    // pour la vision (seuls modèles multimodaux du catalogue — voir
+    // https://console.groq.com/docs/vision).
+    const model = image ? 'qwen/qwen3.8-27b' : 'openai/gpt-oss-120b';
+
+    const requestBody: Record<string, unknown> = {
+      model,
+      messages: groqMessages,
+      temperature: 0.3,
+      max_tokens: 2000,
+    };
+    // Les modèles openai/gpt-oss-* sont des modèles "à raisonnement" : sans
+    // ce réglage, une partie du budget max_tokens part dans une chaîne de
+    // raisonnement interne (champ `reasoning`, séparé de `content`) et une
+    // question un peu longue pouvait épuiser le budget avant toute réponse
+    // finale — `content` revenait vide (vérifié empiriquement). 'low' laisse
+    // la place à une vraie réponse tout en gardant un minimum de raisonnement.
+    if (!image) requestBody.reasoning_effort = 'low';
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
@@ -121,22 +143,36 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model,
-        messages: groqMessages,
-        temperature: 0.3,
-        max_tokens: 1500,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       logError('Groq error:', err);
+      // Groq renvoie 503 quand le modèle est temporairement surchargé côté
+      // fournisseur (constaté sur qwen3.8-27b) — un message distinct évite
+      // de laisser croire à une panne de l'appli alors qu'un nouvel essai
+      // dans quelques secondes suffit généralement.
+      if (response.status === 503) {
+        return NextResponse.json(
+          { error: 'Le service IA est momentanément surchargé côté fournisseur. Réessayez dans quelques instants.' },
+          { status: 503 }
+        );
+      }
       return NextResponse.json({ error: 'Erreur du service IA' }, { status: 502 });
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const message = data.choices?.[0]?.message;
+    // Repli défensif : si `content` revient vide malgré reasoning_effort
+    // ('low' réduit le risque sans l'éliminer à 100% sur les questions très
+    // longues), on préfère montrer le raisonnement au médecin plutôt qu'une
+    // bulle vide qui donnerait l'impression que Ham ne répond pas.
+    const content = message?.content || message?.reasoning || '';
+    if (!content) {
+      logError('Groq empty response:', data);
+      return NextResponse.json({ error: 'Réponse vide du service IA. Réessayez ou reformulez votre question.' }, { status: 502 });
+    }
     return NextResponse.json({ content });
   } catch (error) {
     logError('AI chat error:', error);

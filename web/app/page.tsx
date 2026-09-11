@@ -54,7 +54,7 @@ export default async function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
             {/* Texte + recherche */}
-            <div>
+            <div className="min-w-0">
               <span className="text-primary text-xs font-bold uppercase tracking-widest">Santé en Guinée</span>
               <h1 className="text-4xl md:text-5xl font-extrabold text-ink-900 mt-2 mb-4 leading-tight">
                 Votre santé, <span className="text-primary">simplement.</span>
@@ -64,26 +64,34 @@ export default async function Home() {
               </p>
 
               {/* Barre de recherche */}
+              {/* min-w-0 sur les 2 wrappers : sans ça, un flex-item qui est
+                  lui-même un conteneur flex garde pour largeur minimale la
+                  taille de son contenu (règle du "automatic minimum size").
+                  Safari l'applique plus strictement que Chrome : le bouton
+                  "Rechercher" (whitespace-nowrap, donc non compressible)
+                  se retrouvait poussé hors de la colonne et passait sous la
+                  photo — signalé par l'utilisateur, non reproduit en local
+                  faute de Safari sous la main. */}
               <form action="/doctors" className="flex flex-col sm:flex-row gap-3 mb-5">
-                <div className="flex-1 flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-4 py-3 shadow-sm">
+                <div className="flex-1 min-w-0 flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-4 py-3 shadow-sm">
                   <Search size={16} className="text-ink-400 flex-shrink-0" />
                   <input
                     name="search"
                     type="text"
                     placeholder="Professionnel ou spécialité"
-                    className="flex-1 outline-none bg-transparent text-sm text-ink-900 placeholder-ink-400 min-w-0"
+                    className="flex-1 min-w-0 outline-none bg-transparent text-sm text-ink-900 placeholder-ink-400"
                   />
                 </div>
-                <div className="flex-1 flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-4 py-3 shadow-sm">
+                <div className="flex-1 min-w-0 flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-4 py-3 shadow-sm">
                   <MapPin size={16} className="text-ink-400 flex-shrink-0" />
                   <input
                     name="city"
                     type="text"
                     placeholder="Ville ou quartier"
-                    className="flex-1 outline-none bg-transparent text-sm text-ink-900 placeholder-ink-400 min-w-0"
+                    className="flex-1 min-w-0 outline-none bg-transparent text-sm text-ink-900 placeholder-ink-400"
                   />
                 </div>
-                <button type="submit" className="flex items-center justify-center gap-2 bg-primary hover:bg-ink-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-sm whitespace-nowrap">
+                <button type="submit" className="flex-shrink-0 flex items-center justify-center gap-2 bg-primary hover:bg-ink-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-sm whitespace-nowrap">
                   <Search size={16} /> Rechercher
                 </button>
               </form>
