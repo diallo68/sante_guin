@@ -1,3 +1,11 @@
+'use client';
+
+// Bug pré-existant : ce composant a un onClick natif sans 'use client' —
+// un Server Component ne peut pas passer de gestionnaire d'événement, même
+// à un <button> natif. Provoquait « Event handlers cannot be passed to
+// Client Component props » en boucle dans les logs de prod (page servie
+// par le service worker en fallback hors-ligne, donc potentiellement
+// fréquente) et cassait le bouton "Réessayer la connexion".
 export default function OfflinePage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
