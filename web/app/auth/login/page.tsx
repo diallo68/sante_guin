@@ -128,6 +128,80 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const searchParams = useSearchParams();
 
+  // Compte existant mais jamais vérifié (email de confirmation jamais reçu,
+  // fermé trop tôt...) : la connexion échouait avec un message sans aucune
+  // action possible — l'utilisateur restait bloqué sans pouvoir demander un
+  // nouveau code depuis cet écran. On bascule ici sur le même step OTP que
+  // l'inscription plutôt que de laisser un message sans suite.
+  const [verifyUserId, setVerifyUserId] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otpError, setOtpError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+  const otpRefs = [
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null),
+  ];
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setTimeout(() => setResendTimer(r => r - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendTimer]);
+
+  const handleOTPChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+    setOtpError('');
+    if (value && index < 5) otpRefs[index + 1].current?.focus();
+  };
+
+  const handleOTPKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) otpRefs[index - 1].current?.focus();
+  };
+
+  const handleVerifyOTP = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) { setOtpError('Veuillez entrer les 6 chiffres'); return; }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: verifyUserId, otp: code }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setOtpError(data.error || 'Code incorrect'); return; }
+      window.location.href = '/';
+    } catch {
+      setOtpError('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: verifyUserId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setOtpError(data.error || 'Erreur lors du renvoi du code'); return; }
+      setResendTimer(60);
+      setOtp(['', '', '', '', '', '']);
+      setOtpError('');
+    } catch {
+      setOtpError('Erreur lors du renvoi du code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const oauthError = searchParams.get('error');
     if (oauthError && OAUTH_ERRORS[oauthError]) setErrors({ submit: OAUTH_ERRORS[oauthError] });
@@ -162,7 +236,18 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
         body: JSON.stringify({ contact: formData.contact, password: formData.password }),
       });
       const data = await res.json();
-      if (!res.ok) { setErrors({ submit: data.error || 'Erreur lors de la connexion.' }); return; }
+      if (!res.ok) {
+        if (data.requiresVerification && data.userId) {
+          setVerifyUserId(data.userId);
+          setResendTimer(60);
+          // Un code a déjà été envoyé à l'inscription ; on ne le renvoie pas
+          // automatiquement pour ne pas en spammer un second inutilement.
+          setErrors({});
+          return;
+        }
+        setErrors({ submit: data.error || 'Erreur lors de la connexion.' });
+        return;
+      }
       const role = data.user?.role;
       window.location.href = (role === 'doctor' || role === 'pharmacist') ? '/pro/dashboard' : '/';
     } catch {
@@ -171,6 +256,53 @@ function LoginForm({ onSwitchTab }: { onSwitchTab: () => void }) {
       setLoading(false);
     }
   };
+
+  // ── Compte non vérifié → étape code OTP (au lieu d'un message sans suite) ──
+  if (verifyUserId) {
+    return (
+      <div className="space-y-5">
+        <div className="text-center">
+          <div className="text-4xl mb-2">📧</div>
+          <p className="font-black text-gray-900">Compte non vérifié</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Entrez le code envoyé à{' '}
+            <span className="font-semibold text-gray-700">{formData.contact}</span>
+          </p>
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {otp.map((digit, i) => (
+            <input
+              key={i} ref={otpRefs[i]}
+              type="text" inputMode="numeric" maxLength={1} value={digit}
+              onChange={e => handleOTPChange(i, e.target.value)}
+              onKeyDown={e => handleOTPKeyDown(i, e)}
+              className={`w-11 h-12 text-center text-xl font-black border-2 rounded-xl focus:outline-none transition-all
+                ${digit ? 'border-teal-500 bg-teal-50' : otpError ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-teal-500'}`}
+            />
+          ))}
+        </div>
+        {otpError && <p className="text-red-500 text-xs text-center">{otpError}</p>}
+
+        <button onClick={handleVerifyOTP} disabled={loading || otp.join('').length !== 6}
+          className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+          {loading
+            ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Vérification...</>
+            : '✅ Valider mon compte'}
+        </button>
+
+        <div className="flex justify-center items-center gap-3 text-xs">
+          <button onClick={() => { setVerifyUserId(''); setOtp(['', '', '', '', '', '']); setOtpError(''); }}
+            className="text-gray-400 hover:text-gray-600">← Retour</button>
+          <span className="text-gray-300">·</span>
+          {resendTimer > 0
+            ? <span className="text-gray-400">Renvoyer dans <span className="text-teal-600 font-bold">{resendTimer}s</span></span>
+            : <button onClick={handleResendOTP} disabled={loading} className="text-teal-600 font-bold hover:underline">Renvoyer le code</button>
+          }
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
