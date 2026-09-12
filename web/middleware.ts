@@ -34,8 +34,27 @@ function buildCsp(nonce: string): string {
   ].join('; ');
 }
 
+// `new URL(path, req.url)` construit une URL absolue à partir de l'origine
+// que Next.js pense avoir — en mode `output: standalone` derrière le proxy
+// Nginx de la VM (127.0.0.1:3020), cette origine reste bloquée sur
+// `https://localhost:3020` MÊME quand Nginx transmet correctement l'en-tête
+// Host (vérifié par des requêtes directes au port 3020, Host forcé inclus).
+// Résultat : toute redirection vers /auth/login depuis une page protégée
+// (donc tout accès non connecté à /pro/* ou /profile, dont Ham) renvoyait
+// vers une URL localhost inatteignable depuis l'extérieur — capture d'écran
+// Safari "Safari ne parvient pas à se connecter au serveur « localhost »"
+// du 2026-09-12. On reconstruit l'origine nous-mêmes depuis les en-têtes
+// que Nginx transmet réellement (Host, X-Forwarded-Proto) plutôt que de
+// faire confiance à req.url pour ça.
+function publicOrigin(req: NextRequest): string {
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host;
+  const proto = req.headers.get('x-forwarded-proto') || req.nextUrl.protocol.replace(':', '');
+  return `${proto}://${host}`;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const origin = publicOrigin(req);
 
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const requestHeaders = new Headers(req.headers);
@@ -46,7 +65,7 @@ export async function middleware(req: NextRequest) {
     const token = req.cookies.get(JWT_COOKIE)?.value;
 
     if (!token) {
-      const loginUrl = new URL('/auth/login', req.url);
+      const loginUrl = new URL('/auth/login', origin);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -59,7 +78,7 @@ export async function middleware(req: NextRequest) {
     const payload = await verifyTokenEdge(token);
 
     if (!payload) {
-      const loginUrl = new URL('/auth/login', req.url);
+      const loginUrl = new URL('/auth/login', origin);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -67,7 +86,7 @@ export async function middleware(req: NextRequest) {
     // /pro est réservé aux médecins, pharmaciens et admins
     const isProRoute = PRO_ONLY_ROUTES.some(r => matchesRoute(pathname, r));
     if (isProRoute && payload.role === 'patient') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/', origin));
     }
   }
 
