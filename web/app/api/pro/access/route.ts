@@ -16,6 +16,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ isPro: false, reason: 'not_authenticated' }, { status: 401 });
     }
 
+    // Même règle que requireActiveSubscription() et InstallAppButton :
+    // l'admin a un accès Pro complet sans abonnement.
+    if (authUser.role === 'admin') {
+      return NextResponse.json({ isPro: true, subscriptionStatus: 'admin' });
+    }
+
     if (!PRO_ROLES.includes(authUser.role)) {
       return NextResponse.json({ isPro: false, reason: 'wrong_role' }, { status: 403 });
     }
