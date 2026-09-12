@@ -20,6 +20,16 @@ export type ProAccessResult =
 export async function requireActiveSubscription(req: NextRequest): Promise<ProAccessResult> {
   const authUser = await getAuthUser(req);
   if (!authUser) return { ok: false, status: 401, error: 'Non authentifié' };
+
+  // L'admin a un accès complet aux fonctionnalités Pro (supervision, tests,
+  // démonstration) sans passer par un abonnement — déjà le comportement de
+  // InstallAppButton (`data.user.role === 'admin' → isPro = true`) ; cette
+  // route ne suivait pas la même règle, ce qui bloquait l'admin sur Ham et
+  // le reste de l'espace Pro alors qu'il peut "installer" l'app comme un
+  // abonné actif. Incohérence trouvée en diagnostiquant « Ham ne fonctionne
+  // plus » côté admin.
+  if (authUser.role === 'admin') return { ok: true, authUser };
+
   if (!PRO_ROLES.includes(authUser.role as ProRole)) {
     return { ok: false, status: 403, error: 'Accès réservé aux professionnels de santé' };
   }
